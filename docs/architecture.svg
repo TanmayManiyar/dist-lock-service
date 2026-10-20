@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+<defs>
+<marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334155"/></marker>
+<marker id="r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2563eb"/></marker>
+</defs>
+<rect width="960" height="640" fill="#ffffff"/>
+<text x="480" y="26" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">Fault-Tolerant Distributed Lock Service - System Architecture</text>
+
+<!-- clients -->
+<rect x="20" y="60" width="150" height="150" rx="10" fill="#f1f5f9" stroke="#94a3b8"/>
+<text x="95" y="82" text-anchor="middle" font-weight="700">Clients</text>
+<rect x="35" y="95" width="120" height="30" rx="6" fill="#fff" stroke="#94a3b8"/><text x="95" y="115" text-anchor="middle">Worker A (SDK)</text>
+<rect x="35" y="132" width="120" height="30" rx="6" fill="#fff" stroke="#94a3b8"/><text x="95" y="152" text-anchor="middle">Worker B (SDK)</text>
+<rect x="35" y="169" width="120" height="30" rx="6" fill="#fff" stroke="#94a3b8"/><text x="95" y="189" text-anchor="middle">Dashboard (UI)</text>
+
+<!-- VPC -->
+<rect x="215" y="50" width="725" height="575" rx="12" fill="#f8fafc" stroke="#64748b" stroke-dasharray="6 4"/>
+<text x="230" y="70" font-weight="700" fill="#475569">CLOUD LAYER (raw primitives): VPC 10.0.0.0/16, private subnets in 3 AZs, security groups</text>
+
+<!-- gateway -->
+<rect x="240" y="95" width="200" height="110" rx="10" fill="#fef3c7" stroke="#d97706"/>
+<text x="340" y="117" text-anchor="middle" font-weight="700">Gateway / Network LB</text>
+<text x="340" y="137" text-anchor="middle">leader discovery + redirect</text>
+<text x="340" y="154" text-anchor="middle">fault-injection control plane</text>
+<text x="340" y="171" text-anchor="middle">fenced Resource (demo)</text>
+<text x="340" y="188" text-anchor="middle">serves dashboard</text>
+
+<!-- design layer label -->
+<rect x="470" y="85" width="455" height="330" rx="12" fill="#eff6ff" stroke="#2563eb"/>
+<text x="487" y="105" font-weight="700" fill="#1d4ed8">SYSTEM DESIGN LAYER (what we build): Raft-replicated lock service</text>
+
+<!-- nodes -->
+<g>
+<rect x="490" y="120" width="130" height="130" rx="8" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+<text x="555" y="140" text-anchor="middle" font-weight="700">N1 - LEADER</text>
+<text x="555" y="160" text-anchor="middle" font-size="11">Raft log + term</text>
+<text x="555" y="176" text-anchor="middle" font-size="11">Lock state machine</text>
+<text x="555" y="192" text-anchor="middle" font-size="11">fencing counter</text>
+<text x="555" y="208" text-anchor="middle" font-size="11">lease sweeper</text>
+<text x="555" y="224" text-anchor="middle" font-size="11">quorum-lease reads</text>
+<text x="555" y="240" text-anchor="middle" font-size="11">AZ-a</text>
+
+<rect x="640" y="120" width="130" height="130" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="705" y="140" text-anchor="middle" font-weight="700">N2 - Follower</text>
+<text x="705" y="160" text-anchor="middle" font-size="11">Raft log + term</text>
+<text x="705" y="176" text-anchor="middle" font-size="11">Lock state machine</text>
+<text x="705" y="192" text-anchor="middle" font-size="11">election timer</text>
+<text x="705" y="240" text-anchor="middle" font-size="11">AZ-b</text>
+
+<rect x="790" y="120" width="130" height="130" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="855" y="140" text-anchor="middle" font-weight="700">N3 - Follower</text>
+<text x="855" y="160" text-anchor="middle" font-size="11">Raft log + term</text>
+<text x="855" y="176" text-anchor="middle" font-size="11">Lock state machine</text>
+<text x="855" y="192" text-anchor="middle" font-size="11">election timer</text>
+<text x="855" y="240" text-anchor="middle" font-size="11">AZ-c</text>
+
+<rect x="565" y="270" width="130" height="100" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="630" y="292" text-anchor="middle" font-weight="700">N4 - Follower</text>
+<text x="630" y="312" text-anchor="middle" font-size="11">Raft log + term</text>
+<text x="630" y="328" text-anchor="middle" font-size="11">Lock state machine</text>
+<text x="630" y="360" text-anchor="middle" font-size="11">AZ-a</text>
+
+<rect x="715" y="270" width="130" height="100" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="780" y="292" text-anchor="middle" font-weight="700">N5 - Follower</text>
+<text x="780" y="312" text-anchor="middle" font-size="11">Raft log + term</text>
+<text x="780" y="328" text-anchor="middle" font-size="11">Lock state machine</text>
+<text x="780" y="360" text-anchor="middle" font-size="11">AZ-b</text>
+</g>
+
+<!-- raft arrows -->
+<line x1="620" y1="170" x2="640" y2="170" stroke="#2563eb" stroke-width="2" marker-end="url(#r)"/>
+<path d="M555,250 L600,270" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#r)"/>
+<path d="M620,250 L760,270" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#r)"/>
+<path d="M555,120 Q690,98 855,120" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#r)"/>
+<text x="700" y="400" text-anchor="middle" font-size="11" fill="#1d4ed8">AppendEntries / heartbeats (120 ms) / PreVote / RequestVote over the VPC</text>
+
+<!-- client to gateway -->
+<line x1="170" y1="150" x2="240" y2="150" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+<text x="205" y="142" text-anchor="middle" font-size="11">HTTP</text>
+<line x1="440" y1="150" x2="490" y2="170" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+<text x="465" y="135" text-anchor="middle" font-size="11">to leader</text>
+
+<!-- storage -->
+<rect x="490" y="440" width="430" height="80" rx="10" fill="#ecfdf5" stroke="#059669"/>
+<text x="705" y="462" text-anchor="middle" font-weight="700">Per-node durable disk (EBS / persistent disk)</text>
+<text x="705" y="482" text-anchor="middle" font-size="12">currentTerm, votedFor, log[] - written (atomic rename) BEFORE replying to any RPC</text>
+<text x="705" y="500" text-anchor="middle" font-size="12">lock table is NOT stored: rebuilt by replaying committed log on restart</text>
+<line x1="555" y1="250" x2="555" y2="440" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a)"/>
+
+<!-- compute primitive -->
+<rect x="240" y="440" width="215" height="80" rx="10" fill="#e2e8f0" stroke="#64748b"/>
+<text x="347" y="462" text-anchor="middle" font-weight="700">Cloud VM cluster</text>
+<text x="347" y="482" text-anchor="middle" font-size="12">5 x VM, one replica per VM</text>
+<text x="347" y="500" text-anchor="middle" font-size="12">spread across 3 availability zones</text>
+
+<!-- protected resource -->
+<rect x="240" y="235" width="200" height="90" rx="10" fill="#fce7f3" stroke="#db2777"/>
+<text x="340" y="257" text-anchor="middle" font-weight="700">Protected resource</text>
+<text x="340" y="277" text-anchor="middle" font-size="12">tracks max fencing token per key</text>
+<text x="340" y="295" text-anchor="middle" font-size="12">rejects writes with token &lt; max</text>
+<line x1="340" y1="205" x2="340" y2="235" stroke="#334155" stroke-width="1.5" marker-end="url(#a)"/>
+
+<text x="480" y="580" text-anchor="middle" font-size="12" fill="#475569">Solid blue = replication path   Solid grey = client path   Dashed green = disk persistence</text>
+<text x="480" y="600" text-anchor="middle" font-size="12" fill="#475569">Quorum = 3 of 5: tolerates any 2 node crashes or a 2|3 partition (majority side keeps serving)</text>
+</svg>

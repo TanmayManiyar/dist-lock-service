@@ -1,0 +1,33 @@
+# Five replicas + gateway on a private bridge network (the VPC analogue).
+# Only the gateway publishes a port; replicas are reachable only inside the network.
+#   docker compose up --build        ->  http://localhost:8080  and  http://localhost:8080/lab/
+# Optional: BASIC_AUTH=user:password docker compose up   (protects the dashboard and fault-injection API)
+x-replica: &replica
+  build: .
+  restart: unless-stopped
+  environment: &replica-env
+    NODE_HOST: 0.0.0.0
+    NODE_ADDRS: "1=node1:7001,2=node2:7001,3=node3:7001,4=node4:7001,5=node5:7001"
+    DURABLE: "1"            # fsync every write
+  networks: [lockvpc]
+
+services:
+  node1: { <<: *replica, command: ["node", "node.js", "1", "5", "/data"], volumes: ["n1:/data"] }
+  node2: { <<: *replica, command: ["node", "node.js", "2", "5", "/data"], volumes: ["n2:/data"] }
+  node3: { <<: *replica, command: ["node", "node.js", "3", "5", "/data"], volumes: ["n3:/data"] }
+  node4: { <<: *replica, command: ["node", "node.js", "4", "5", "/data"], volumes: ["n4:/data"] }
+  node5: { <<: *replica, command: ["node", "node.js", "5", "5", "/data"], volumes: ["n5:/data"] }
+  gateway:
+    build: .
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      REMOTE_NODES: "1=node1:7001,2=node2:7001,3=node3:7001,4=node4:7001,5=node5:7001"
+      BASIC_AUTH: "${BASIC_AUTH:-}"
+    depends_on: [node1, node2, node3, node4, node5]
+    networks: [lockvpc]
+
+networks:
+  lockvpc: {}
+
+volumes: { n1: {}, n2: {}, n3: {}, n4: {}, n5: {} }
