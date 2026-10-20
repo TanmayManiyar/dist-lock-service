@@ -19,9 +19,9 @@ const edit = (file, pairs) => {
 };
 edit('index.html', [['<script src="app.js"></script>', '<script src="/sim.js"></script>\n<script src="app.js"></script>']]);
 edit('lab/experiment.html', [
-  ['<script src="lab.js"></script>', '<script src="/sim.js"></script>\n<script src="lab.js"></script>'],
+  ['<script src="/lab/lab.js"></script>', '<script src="/sim.js"></script>\n<script src="/lab/lab.js"></script>'],
   ['<div class="tabs" id="tabs"></div>', '<p class="crumb">The lock cluster in this lab is a simulation that runs entirely in your browser: nothing is sent to a server, and every visitor gets a private cluster. Keep this tab in the foreground while you work (browsers slow down background tabs, which can trigger extra elections).</p>\n  <div class="tabs" id="tabs"></div>'],
 ]);
 edit('lab/lab.js', [['Thank you! Feedback saved.', 'Thank you! Feedback saved in this browser.']]);
-fs.writeFileSync(path.join(OUT, 'vercel.json'), JSON.stringify({ cleanUrls: false, trailingSlash: false }, null, 2));
+fs.writeFileSync(path.join(OUT, 'vercel.json'), JSON.stringify({ cleanUrls: false }, null, 2));
 console.log('built', OUT);

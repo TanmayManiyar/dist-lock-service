@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Experiment - Distributed Lock Service Virtual Lab</title>
-<link rel="stylesheet" href="lab.css">
+<link rel="stylesheet" href="/lab/lab.css">
 </head>
 <body>
 <div class="top">
@@ -18,11 +18,11 @@
   <div id="panes"></div>
 </div>
 <script src="/sim.js"></script>
-<script src="lab.js"></script>
+<script src="/lab/lab.js"></script>
 <script>
   const id = new URLSearchParams(location.search).get('exp') || 'exp2';
   const s = document.createElement('script');
-  s.src = id.replace(/[^a-z0-9]/gi, '') + '.js';
+  s.src = '/lab/' + id.replace(/[^a-z0-9]/gi, '') + '.js';
   s.onload = () => buildExperiment(window.EXP);
   s.onerror = () => document.getElementById('expTitle').textContent = 'Experiment not found';
   document.body.append(s);
