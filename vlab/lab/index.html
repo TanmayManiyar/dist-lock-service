@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Distributed Lock Service Virtual Lab</title>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div class="top">
+  <div><span class="brand">Distributed Lock Service Virtual Lab</span><div class="crumb">Computer Science and Engineering &gt; Distributed Systems</div></div>
+  <div><a href="/" target="_blank">Raw dashboard</a></div>
+</div>
+<div class="wrap">
+  <h1>Fault-Tolerant Distributed Lock Service</h1>
+  <div class="tabs" id="tabs"></div>
+  <section class="pane" id="p-Introduction"><div class="prose">
+    <p>Services such as Chubby, etcd and ZooKeeper let many machines agree on <i>who owns what</i>: which worker is the leader, which job holds a lock. If the coordinator itself fails, everything built on it can corrupt data or stop.</p>
+    <p>This lab uses a <b>real</b> lock service built from scratch: five replicas run the Raft consensus protocol, a lock state machine grants time-limited leases, and fencing tokens protect resources from stale clients. You break the cluster (crash nodes, cut the network) and watch it recover.</p>
+  </div></section>
+  <section class="pane" id="p-Objective"><div class="prose">
+    <ul><li>Explain how a replicated lock service stays correct when machines fail.</li>
+    <li>Observe leader election, log replication and quorum commit in a live cluster.</li>
+    <li>Predict and verify the effect of crashes and network partitions.</li>
+    <li>Explain why fencing tokens are needed even when the lock service is correct.</li></ul>
+  </div></section>
+  <section class="pane" id="p-Experiments">
+    <div class="cards">
+      <a class="card" href="experiment.html?exp=exp1"><span class="n">1</span> Mutual exclusion with leases<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+      <a class="card" href="experiment.html?exp=exp2"><span class="n">2</span> Raft leader election and failover<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+      <a class="card" href="experiment.html?exp=exp3"><span class="n">3</span> Log replication and quorum commit<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+      <a class="card" href="experiment.html?exp=exp4"><span class="n">4</span> Network partitions and split brain<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+      <a class="card" href="experiment.html?exp=exp5"><span class="n">5</span> Fencing tokens<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+      <a class="card" href="experiment.html?exp=exp6"><span class="n">6</span> Crash recovery and persistence<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+    </div>
+  </section>
+  <section class="pane" id="p-Audience"><div class="prose"><p>Undergraduate and postgraduate students of Distributed Systems, Cloud Computing and Advanced Cloud System Software Design. Basic networking and process concepts are assumed; no Raft background is needed.</p></div></section>
+  <section class="pane" id="p-Alignment"><div class="prose"><p>Consensus and replication, leader election, leases and timeouts, quorum systems, the CAP trade-off, failure models (crash, partition), and safe use of locks with fencing tokens.</p></div></section>
+  <section class="pane" id="p-Feedback"><div class="prose"><p>Use the Feedback tab inside each experiment to rate it and leave comments.</p></div></section>
+</div>
+<script>
+  const names = { Introduction: 'Introduction', Objective: 'Objective', Experiments: 'List of Experiments', Audience: 'Target Audience', Alignment: 'Course Alignment', Feedback: 'Feedback' };
+  const tabs = document.getElementById('tabs');
+  function show(k) {
+    tabs.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.k === k));
+    document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'p-' + k));
+    history.replaceState(null, '', '#' + k);
+  }
+  for (const k in names) {
+    const b = document.createElement('button'); b.className = 'tab'; b.dataset.k = k; b.textContent = names[k]; b.onclick = () => show(k); tabs.append(b);
+  }
+  show(names[location.hash.slice(1)] ? location.hash.slice(1) : 'Introduction');
+</script>
+</body>
+</html>

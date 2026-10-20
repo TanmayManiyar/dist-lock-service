@@ -26,6 +26,10 @@ Open **http://localhost:8080/lab/** for the IIT-style virtual lab (Aim, Theory, 
 The Simulation tab embeds this real cluster plus a lab panel that gives guided steps, checks each step automatically, and offers protocol toggles (PreVote, check-quorum, election timeout) and a cluster reset.
 All six experiments are built: 1 leases, 2 leader election, 3 log replication, 4 partitions, 5 fencing tokens, 6 crash recovery. Plan: [docs/VIRTUAL_LAB_PLAN.md](docs/VIRTUAL_LAB_PLAN.md).
 
+### Static virtual lab (no server, deployable to Vercel)
+
+`npm run build:vlab` generates `vlab/`, a static copy of the lab whose lock cluster is an in-browser simulation (`sim.js`: same Raft and lock logic, in-memory network and disks). Each visitor gets a private cluster; nothing runs on a server. Deploy by publishing the `vlab` folder to any static host, e.g. `cd vlab && npx vercel deploy --prod`.
+
 ## API (gateway, port 8080)
 
 | Method | Path | Body |

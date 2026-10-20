@@ -9,6 +9,8 @@
     "chaos": "node test-chaos.js",
     "chaos:quick": "node test-chaos.js --quick",
     "bench": "node bench.js",
-    "docker": "docker compose up --build"
+    "docker": "docker compose up --build",
+    "build:vlab": "node build-vlab.js",
+    "vlab": "node build-vlab.js && npx --yes serve vlab -l 8099"
   }
 }
