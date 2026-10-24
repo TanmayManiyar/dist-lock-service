@@ -6,9 +6,10 @@ const COLORS = { leader: '#f5b83d', follower: '#4c9aff', candidate: '#ff8a3d', d
 let cluster = null;
 
 function nodeState(n) { return n.up ? n.role : 'down'; }
+const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 function drawRing(c) {
-  const svg = $('ring'), cx = 200, cy = 150, R = 105, pts = {};
+  const svg = $('ring'), cx = 200, cy = 150, R = 108, pts = {};
   c.nodes.forEach((n, i) => {
     const a = -Math.PI / 2 + i * 2 * Math.PI / c.nodes.length;
     pts[n.id] = [cx + R * Math.cos(a), cy + R * Math.sin(a)];
@@ -18,13 +19,15 @@ function drawRing(c) {
     if (a.id >= b.id) continue;
     const cut = (a.blocked || []).includes(b.id) || (b.blocked || []).includes(a.id);
     const dead = !a.up || !b.up;
-    s += `<line x1="${pts[a.id][0]}" y1="${pts[a.id][1]}" x2="${pts[b.id][0]}" y2="${pts[b.id][1]}" stroke="${cut ? '#ff5d6c' : '#c3cad8'}" stroke-width="${cut ? 1.5 : 1}" stroke-dasharray="${cut ? '4 4' : dead ? '2 4' : ''}" opacity="${cut || !dead ? 1 : .4}"/>`;
+    s += `<line x1="${pts[a.id][0]}" y1="${pts[a.id][1]}" x2="${pts[b.id][0]}" y2="${pts[b.id][1]}" stroke="${cut ? '#d1344a' : '#c9d0de'}" stroke-width="${cut ? 2 : 1.2}" stroke-dasharray="${cut ? '5 4' : dead ? '2 4' : ''}" opacity="${cut || !dead ? 1 : .45}"/>`;
   }
   for (const n of c.nodes) {
     const [x, y] = pts[n.id], st = nodeState(n);
-    s += `<circle cx="${x}" cy="${y}" r="26" fill="${COLORS[st]}" opacity="${st === 'down' ? .5 : 1}" ${st === 'leader' ? 'stroke="#1a2233" stroke-width="2.5"' : ''}/>
-      <text x="${x}" y="${y - 2}" text-anchor="middle" font-size="14" font-weight="700" fill="#0f1420">N${n.id}</text>
-      <text x="${x}" y="${y + 12}" text-anchor="middle" font-size="10" fill="#0f1420">${n.up ? 't' + n.term : 'down'}</text>`;
+    s += `<g><title>N${n.id}: ${st}${n.up ? ', term ' + n.term : ''}</title>`
+      + (st === 'leader' ? `<circle cx="${x}" cy="${y}" r="34" fill="none" stroke="#f5b83d" stroke-width="2" opacity=".55"/>` : '')
+      + `<circle cx="${x}" cy="${y}" r="28" fill="${COLORS[st]}" opacity="${st === 'down' ? .55 : 1}" ${st === 'leader' ? 'stroke="#18202f" stroke-width="2.5"' : 'stroke="#fff" stroke-width="2"'}/>
+      <text x="${x}" y="${y - 1}" text-anchor="middle" font-size="15" font-weight="700" fill="#10151f">N${n.id}</text>
+      <text x="${x}" y="${y + 13}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#10151f">${n.up ? 'term ' + n.term : 'down'}</text></g>`;
   }
   svg.innerHTML = s;
 }
@@ -38,30 +41,30 @@ function render(c) {
   drawRing(c);
 
   $('nodeBtns').innerHTML = c.nodes.map(n =>
-    n.up ? `<button class="kill" onclick="post('/api/fault/kill',{id:${n.id}})">Kill N${n.id}</button>`
-         : `<button class="good" onclick="post('/api/fault/restart',{id:${n.id}})">Restart N${n.id}</button>`).join('');
+    n.up ? `<button class="kill sm" title="Crash node ${n.id}" onclick="post('/api/fault/kill',{id:${n.id}})">Kill N${n.id}</button>`
+         : `<button class="good sm" title="Restart node ${n.id}" onclick="post('/api/fault/restart',{id:${n.id}})">Restart N${n.id}</button>`).join('');
 
   $('nodeTable').querySelector('tbody').innerHTML = c.nodes.map(n => n.up
-    ? `<tr><td>N${n.id}</td><td>${n.role}</td><td>${n.term}</td><td>${n.logLength}</td><td>${n.commitIndex}</td><td>${(n.blocked || []).map(b => 'N' + b).join(', ') || '—'}</td></tr>`
-    : `<tr><td>N${n.id}</td><td colspan="5" style="color:var(--mute)">down</td></tr>`).join('');
+    ? `<tr><td><b>N${n.id}</b></td><td><span class="badge ${n.role}">${n.role}</span></td><td>${n.term}</td><td>${n.logLength}</td><td>${n.commitIndex}</td><td>${(n.blocked || []).map(b => `<span class="chip">N${b}</span>`).join('') || '<span style="color:var(--faint)">&mdash;</span>'}</td></tr>`
+    : `<tr><td><b>N${n.id}</b></td><td><span class="badge down">down</span></td><td colspan="4" style="color:var(--faint)">not running</td></tr>`).join('');
 
-  const log = $('log'), atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
+  const log = $('log'), atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 24;
   log.innerHTML = c.events.map(e => {
     const cls = /FAULT|network|stepped down/.test(e.msg) ? 'fault' : /LEADER|election/.test(e.msg) ? 'lead' : '';
     const who = e.node === 'client' ? 'client' : 'N' + e.node;
-    return `<div class="${cls}">${new Date(e.ts).toLocaleTimeString()} <b>${who}</b> ${e.msg}</div>`;
+    return `<div class="ev ${cls}"><time>${new Date(e.ts).toLocaleTimeString()}</time><span class="who">${who}</span><span>${esc(e.msg)}</span></div>`;
   }).join('');
   if (atBottom) log.scrollTop = log.scrollHeight;
 }
 
 function renderLocks(r) {
   const tb = $('lockTable').querySelector('tbody');
-  if (!r.ok) { tb.innerHTML = `<tr><td colspan="4" class="empty">${r.error === 'no-leader' || r.error === 'not-leader' ? 'No quorum – lock table unavailable' : r.error}</td></tr>`; return; }
+  if (!r.ok) { tb.innerHTML = `<tr><td colspan="4" class="empty">${r.error === 'no-leader' || r.error === 'not-leader' ? 'No quorum: the lock table is unavailable' : esc(r.error)}</td></tr>`; return; }
   const rows = Object.entries(r.locks).filter(([, l]) => l.expiresAt > r.now);
   tb.innerHTML = rows.length ? rows.map(([k, l]) => {
-    const total = l.expiresAt - l.acquiredAt, left = Math.max(0, l.expiresAt - r.now);
-    return `<tr><td>${k}</td><td>${l.owner}</td><td>#${l.token}</td><td>${(left / 1000).toFixed(1)}s<div class="bar"><i style="width:${Math.min(100, left / total * 100)}%"></i></div></td></tr>`;
-  }).join('') : '<tr><td colspan="4" class="empty">No locks held</td></tr>';
+    const total = l.expiresAt - l.acquiredAt, left = Math.max(0, l.expiresAt - r.now), pct = Math.min(100, left / total * 100);
+    return `<tr><td><b>${esc(k)}</b></td><td>${esc(l.owner)}</td><td class="token">#${l.token}</td><td>${(left / 1000).toFixed(1)}s<div class="bar"><i class="${pct < 20 ? 'low' : pct < 50 ? 'mid' : ''}" style="width:${pct}%"></i></div></td></tr>`;
+  }).join('') : '<tr><td colspan="4" class="empty">No locks held. Press Acquire to take one.</td></tr>';
 }
 
 async function poll() {
@@ -76,8 +79,8 @@ async function poll() {
 function show(r) {
   const el = $('result');
   el.className = 'result ' + (r.ok ? 'ok' : 'err');
-  el.textContent = r.ok ? `OK${r.token ? ' · fencing token #' + r.token : ''}${r.servedBy ? ' · via leader N' + r.servedBy : ''}`
-    : `FAILED: ${r.error}${r.holder ? ' · held by ' + r.holder + ' (token #' + r.token + ')' : ''}`;
+  el.textContent = r.ok ? `✔ OK${r.token ? ' · fencing token #' + r.token : ''}${r.servedBy ? ' · via leader N' + r.servedBy : ''}`
+    : `✖ ${r.error}${r.holder ? ' · held by ' + r.holder + ' (token #' + r.token + ')' : ''}`;
   if (r.ok && r.token) $('token').value = r.token;
 }
 const form = () => ({ key: $('key').value, owner: $('owner').value, ttlMs: +$('ttl').value, token: +$('token').value });
@@ -124,13 +127,13 @@ $('rwrite').onclick = async () => {
   const f = form(), r = await post('/api/resource/write', { key: f.key, token: f.token, owner: f.owner, value: $('rvalue').value });
   const el = $('rresult');
   el.className = 'result ' + (r.ok ? 'ok' : 'err');
-  el.textContent = r.ok ? `Write accepted (token #${f.token})` : `REJECTED: stale token #${f.token} (resource has seen #${r.maxToken})`;
+  el.textContent = r.ok ? `✔ Write accepted (token #${f.token})` : `✖ REJECTED: stale token #${f.token} (resource has seen #${r.maxToken})`;
 };
 async function pollResource() {
   try {
     const r = await fetch('/api/resource').then(x => x.json()), rows = Object.entries(r);
     $('resTable').querySelector('tbody').innerHTML = rows.length
-      ? rows.map(([k, v]) => `<tr><td>${k}</td><td>#${v.maxToken}</td><td>${v.writer}</td><td>${v.value}</td></tr>`).join('')
+      ? rows.map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td class="token">#${v.maxToken}</td><td>${esc(v.writer)}</td><td>${esc(v.value)}</td></tr>`).join('')
       : '<tr><td colspan="4" class="empty">No writes yet</td></tr>';
   } catch {}
   setTimeout(pollResource, 700);

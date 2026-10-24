@@ -4,76 +4,96 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Distributed Lock Service</title>
+<link rel="stylesheet" href="ui.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div>
-    <h1>Fault-Tolerant Distributed Lock Service</h1>
-    <p class="sub">Raft-replicated lease locks with fencing tokens</p>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+    <div>
+      <h1>Fault-Tolerant Distributed Lock Service</h1>
+      <p class="sub">Raft-replicated lease locks with fencing tokens</p>
+    </div>
   </div>
-  <div style="display:flex;gap:10px;align-items:center"><span class="navhint">Click here to go to the virtual lab <span class="arr">&rarr;</span></span><a href="/lab/" class="navlab">Virtual Lab</a><div class="status" id="summary">connecting…</div></div>
+  <nav class="topnav" aria-label="Main">
+    <span class="navhint">Click here to go to the virtual lab <span class="arr">&rarr;</span></span><a href="/lab/" class="navlab">Virtual Lab</a>
+    <div class="status" id="summary" role="status" aria-live="polite">connecting…</div>
+  </nav>
 </header>
 
 <main>
-  <section class="card" id="clusterCard">
-    <h2>Cluster</h2>
-    <svg id="ring" viewBox="0 0 400 300"></svg>
-    <div class="legend">
-      <span><i class="dot leader"></i>Leader</span><span><i class="dot follower"></i>Follower</span>
-      <span><i class="dot candidate"></i>Candidate</span><span><i class="dot down"></i>Down</span>
+  <div class="col">
+  <section class="card c-cluster" aria-labelledby="h-cluster">
+    <div class="card-h">
+      <h2 id="h-cluster">Cluster</h2>
+      <div class="legend">
+        <span><i class="dot leader"></i>Leader</span><span><i class="dot follower"></i>Follower</span>
+        <span><i class="dot candidate"></i>Candidate</span><span><i class="dot down"></i>Down</span>
+      </div>
     </div>
-    <h3>Fault injection</h3>
-    <div class="btnrow" id="nodeBtns"></div>
-    <div class="btnrow">
-      <button id="isolateLeader">Isolate leader</button>
-      <button id="splitMajority">Split majority | minority</button>
-      <button id="healBtn" class="good">Heal network</button>
+    <svg id="ring" viewBox="0 0 400 300" role="img" aria-label="The five replicas and their roles"></svg>
+    <div class="fault">
+      <div>
+        <h3>Crash or restart a node</h3>
+        <div class="btnrow node-actions" id="nodeBtns"></div>
+      </div>
+      <div>
+        <h3>Break the network</h3>
+        <div class="btnrow">
+          <button id="isolateLeader" title="Cut the current leader off from every other node">Isolate leader</button>
+          <button id="splitMajority" title="Split the cluster into a group of 3 and a group of 2">Split 3 | 2</button>
+          <button id="healBtn" class="good" title="Reconnect all nodes">Heal network</button>
+        </div>
+      </div>
     </div>
     <table id="nodeTable"><thead><tr><th>Node</th><th>Role</th><th>Term</th><th>Log</th><th>Commit</th><th>Cut off from</th></tr></thead><tbody></tbody></table>
   </section>
 
-  <section class="card">
-    <h2>Lock client</h2>
+  <section class="card c-log" aria-labelledby="h-log">
+    <div class="card-h"><h2 id="h-log">Event log</h2><span class="crumb">Newest at the bottom</span></div>
+    <div id="log" class="log"></div>
+  </section>
+  </div>
+  <div class="col">
+  <section class="card c-lock" aria-labelledby="h-lock">
+    <div class="card-h"><h2 id="h-lock">Lock client</h2></div>
     <div class="form">
       <label>Resource key<input id="key" value="orders-db"></label>
       <label>Client name<input id="owner" value="client-A"></label>
       <label>Lease (ms)<input id="ttl" type="number" value="8000" min="500"></label>
-      <label>Token (for renew/release)<input id="token" type="number" placeholder="from acquire"></label>
+      <label>Token (renew / release)<input id="token" type="number" placeholder="filled after acquire"></label>
     </div>
     <div class="btnrow">
-      <button id="acq" class="good">Acquire</button>
+      <button id="acq" class="primary">Acquire</button>
       <button id="ren">Renew</button>
       <button id="rel" class="warn">Release</button>
     </div>
-    <div id="result" class="result">—</div>
+    <div id="result" class="result" role="status" aria-live="polite">Result of your last action appears here</div>
 
     <h3>Held locks</h3>
-    <table id="lockTable"><thead><tr><th>Key</th><th>Holder</th><th>Fencing token</th><th>Lease</th></tr></thead><tbody></tbody></table>
+    <table id="lockTable"><thead><tr><th>Key</th><th>Holder</th><th>Token</th><th>Lease left</th></tr></thead><tbody></tbody></table>
   </section>
 
-  <section class="card">
-    <h2>Fencing token demo</h2>
-    <p class="hint">A client pauses (GC / network stall) past its lease. Another client takes the lock. When the first wakes up and writes, the protected resource rejects its stale token.</p>
-    <button id="fenceDemo">Run demo</button>
+  <section class="card c-res" aria-labelledby="h-res">
+    <div class="card-h"><h2 id="h-res">Protected resource</h2></div>
+    <p class="hint">A store that only accepts writes carrying a fresh fencing token. It uses the key, client name and token from the Lock client card.</p>
+    <div class="form">
+      <label>Value to write<input id="rvalue" value="data-1"></label>
+      <div style="display:flex;align-items:flex-end"><button id="rwrite">Write with token</button></div>
+    </div>
+    <div id="rresult" class="result" style="margin-top:12px" role="status" aria-live="polite">&mdash;</div>
+    <table id="resTable" style="margin-top:12px"><thead><tr><th>Key</th><th>Highest token</th><th>Last writer</th><th>Value</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="card c-fence" aria-labelledby="h-fence">
+    <div class="card-h"><h2 id="h-fence">Fencing token demo</h2><button id="fenceDemo" class="primary">Run demo</button></div>
+    <p class="hint">A client pauses past its lease, another client takes the lock, then the first wakes up and writes. The protected resource rejects its stale token.</p>
     <ol id="fenceSteps" class="steps"></ol>
   </section>
-
-  <section class="card">
-    <h2>Protected resource</h2>
-    <p class="hint">A storage service that only accepts writes carrying a fencing token. Uses the key, client name and token fields from the Lock client card.</p>
-    <label>Value to write<input id="rvalue" value="data-1"></label>
-    <div class="btnrow"><button id="rwrite">Write with token</button></div>
-    <div id="rresult" class="result">&mdash;</div>
-    <table id="resTable"><thead><tr><th>Key</th><th>Highest token</th><th>Last writer</th><th>Value</th></tr></thead><tbody></tbody></table>
-  </section>
-
-  <section class="card wide">
-    <h2>Event log</h2>
-    <div id="log" class="log"></div>
-  </section>
+  </div>
 </main>
-<p style="text-align:center;color:var(--mute);font-size:13px;padding:0 0 24px">Made by <b>Tanmay Maniyar</b></p>
+<p class="foot">Made by <b>Tanmay Maniyar</b></p>
 <script src="app.js"></script>
 </body>
 </html>

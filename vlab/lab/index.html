@@ -4,53 +4,107 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Distributed Lock Service Virtual Lab</title>
+<link rel="stylesheet" href="/ui.css">
 <link rel="stylesheet" href="/lab/lab.css">
 </head>
 <body>
-<div class="top">
-  <div><span class="brand">Distributed Lock Service Virtual Lab</span><div class="crumb">Computer Science and Engineering &gt; Distributed Systems</div></div>
-  <div><a href="/" target="_blank">Raw dashboard</a></div>
-</div>
+<header class="top">
+  <a class="brand-link" href="/lab/">
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+    <span class="brand">Distributed Lock Service Virtual Lab<span class="crumb">Computer Science and Engineering &gt; Distributed Systems</span></span>
+  </a>
+  <nav aria-label="Main"><a class="btn-link" href="/" target="_blank" rel="noopener">Raw dashboard</a></nav>
+</header>
+
 <div class="wrap">
-  <h1>Fault-Tolerant Distributed Lock Service</h1>
-  <div class="tabs" id="tabs"></div>
-  <section class="pane" id="p-Introduction"><div class="prose">
-    <p>Services such as Chubby, etcd and ZooKeeper let many machines agree on <i>who owns what</i>: which worker is the leader, which job holds a lock. If the coordinator itself fails, everything built on it can corrupt data or stop.</p>
-    <p>This lab uses a <b>real</b> lock service built from scratch: five replicas run the Raft consensus protocol, a lock state machine grants time-limited leases, and fencing tokens protect resources from stale clients. You break the cluster (crash nodes, cut the network) and watch it recover.</p>
-  </div></section>
-  <section class="pane" id="p-Objective"><div class="prose">
-    <ul><li>Explain how a replicated lock service stays correct when machines fail.</li>
-    <li>Observe leader election, log replication and quorum commit in a live cluster.</li>
-    <li>Predict and verify the effect of crashes and network partitions.</li>
-    <li>Explain why fencing tokens are needed even when the lock service is correct.</li></ul>
-  </div></section>
-  <section class="pane" id="p-Experiments">
-    <div class="cards">
-      <a class="card" href="/lab/experiment.html?exp=exp1"><span class="n">1</span> Mutual exclusion with leases<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
-      <a class="card" href="/lab/experiment.html?exp=exp2"><span class="n">2</span> Raft leader election and failover<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
-      <a class="card" href="/lab/experiment.html?exp=exp3"><span class="n">3</span> Log replication and quorum commit<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
-      <a class="card" href="/lab/experiment.html?exp=exp4"><span class="n">4</span> Network partitions and split brain<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
-      <a class="card" href="/lab/experiment.html?exp=exp5"><span class="n">5</span> Fencing tokens<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
-      <a class="card" href="/lab/experiment.html?exp=exp6"><span class="n">6</span> Crash recovery and persistence<br><small>Aim, Theory, Pretest, Procedure, Simulation, Posttest</small></a>
+  <section class="hero">
+    <div class="eyebrow">Virtual lab</div>
+    <h1>Fault-Tolerant Distributed Lock Service</h1>
+    <p>Break a five-machine lock service on purpose and watch it recover. Six short experiments take you from simple locks to leader election, network partitions and fencing tokens, each with theory, a quiz and a guided hands-on simulation.</p>
+    <div class="btnrow">
+      <a class="btn-link primary" href="/lab/experiment.html?exp=exp1" id="startBtn">Start Experiment 1 &rarr;</a>
+      <a class="btn-link" href="#experiments">See all experiments</a>
     </div>
   </section>
-  <section class="pane" id="p-Audience"><div class="prose"><p>Undergraduate and postgraduate students of Distributed Systems, Cloud Computing and Advanced Cloud System Software Design. Basic networking and process concepts are assumed; no Raft background is needed.</p></div></section>
-  <section class="pane" id="p-Alignment"><div class="prose"><p>Consensus and replication, leader election, leases and timeouts, quorum systems, the CAP trade-off, failure models (crash, partition), and safe use of locks with fencing tokens.</p></div></section>
-  <section class="pane" id="p-Feedback"><div class="prose"><p>Use the Feedback tab inside each experiment to rate it and leave comments.</p></div></section>
-  <p class="crumb" style="margin-top:40px;text-align:center">Made by <b>Tanmay Maniyar</b></p>
+
+  <nav class="subnav" aria-label="On this page">
+    <a href="#experiments">Experiments</a><a href="#introduction">Introduction</a><a href="#objective">Objective</a><a href="#audience">Target audience</a><a href="#alignment">Course alignment</a><a href="#feedback">Feedback</a>
+  </nav>
+
+  <section class="section" id="experiments">
+    <h2>List of experiments</h2>
+    <div class="cards" id="expCards"></div>
+  </section>
+
+  <section class="section" id="introduction">
+    <h2>Introduction</h2>
+    <div class="prose">
+      <p>Services such as Chubby, etcd and ZooKeeper let many machines agree on <i>who owns what</i>: which worker is the leader, which job holds a lock. If the coordinator itself fails, everything built on it can corrupt data or stop.</p>
+      <p>This lab uses a lock service built from scratch: five replicas run the Raft consensus protocol, a lock state machine grants time-limited leases, and fencing tokens protect resources from stale clients. You crash nodes, cut the network and watch it recover.</p>
+    </div>
+  </section>
+
+  <section class="section" id="objective">
+    <h2>Objective</h2>
+    <div class="infogrid">
+      <div class="card"><h3>You will learn to</h3><ul>
+        <li>Explain how a replicated lock service stays correct when machines fail.</li>
+        <li>Observe leader election, log replication and quorum commit in a live cluster.</li>
+        <li>Predict and verify the effect of crashes and network partitions.</li>
+        <li>Explain why fencing tokens are needed even when the lock service is correct.</li></ul></div>
+      <div class="card"><h3>How each experiment works</h3><ol>
+        <li><b>Aim and Theory:</b> read the idea (5-10 minutes).</li>
+        <li><b>Pretest:</b> check what you already know.</li>
+        <li><b>Procedure and Simulation:</b> follow guided steps; the lab checks each one for you.</li>
+        <li><b>Posttest:</b> see how much you improved.</li></ol></div>
+    </div>
+  </section>
+
+  <section class="section" id="audience">
+    <h2>Target audience</h2>
+    <div class="prose"><p>Undergraduate and postgraduate students of Distributed Systems, Cloud Computing and Advanced Cloud System Software Design. Basic networking and process concepts are assumed; no Raft background is needed.</p></div>
+  </section>
+
+  <section class="section" id="alignment">
+    <h2>Course alignment</h2>
+    <div class="prose"><p>Consensus and replication, leader election, leases and timeouts, quorum systems, the CAP trade-off, failure models (crash, partition), and safe use of locks with fencing tokens.</p></div>
+  </section>
+
+  <section class="section" id="feedback">
+    <h2>Feedback</h2>
+    <div class="prose"><p>Use the Feedback tab inside each experiment to rate it and leave comments.</p></div>
+  </section>
 </div>
+<p class="foot">Made by <b>Tanmay Maniyar</b></p>
 <script>
-  const names = { Introduction: 'Introduction', Objective: 'Objective', Experiments: 'List of Experiments', Audience: 'Target Audience', Alignment: 'Course Alignment', Feedback: 'Feedback' };
-  const tabs = document.getElementById('tabs');
-  function show(k) {
-    tabs.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.k === k));
-    document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'p-' + k));
-    history.replaceState(null, '', '#' + k);
+  // experiment catalogue + progress read from this browser's saved lab state
+  const EXPS = [
+    ['exp1', 'Mutual exclusion with leases', 'Contend for a lock with two clients, renew a lease and watch one expire.', 7, '15 min'],
+    ['exp2', 'Raft leader election and failover', 'Crash the leader, break the quorum and see why timeouts matter.', 7, '20 min'],
+    ['exp3', 'Log replication and quorum commit', 'Watch a majority commit an entry, lose followers and catch up.', 5, '15 min'],
+    ['exp4', 'Network partitions and split brain', 'Split the network and see what check-quorum and PreVote protect against.', 9, '25 min'],
+    ['exp5', 'Fencing tokens', 'Reproduce the stalled-client bug, then fix it with fencing.', 7, '20 min'],
+    ['exp6', 'Crash recovery and persistence', 'Restart nodes, the whole cluster and a wiped disk.', 5, '15 min'],
+  ];
+  const read = k => { try { return JSON.parse(localStorage.getItem('vlab.' + k)); } catch { return null; } };
+  const host = document.getElementById('expCards');
+  let firstUnfinished = null;
+  EXPS.forEach(([id, title, desc, steps, time], i) => {
+    const done = (read(id + '.done') || []).length, pre = read(id + '.pre'), post = read(id + '.post');
+    if (firstUnfinished === null && done < steps) firstUnfinished = [id, i + 1, done];
+    const a = document.createElement('a');
+    a.className = 'xcard'; a.href = '/lab/experiment.html?exp=' + id;
+    a.innerHTML = `<span class="n">${i + 1}</span><h3>${title}</h3><p>${desc}</p>
+      <div class="meta"><span class="tag">${steps} guided steps</span><span class="tag">${time}</span><span class="tag">2 quizzes</span>${pre ? `<span class="tag">Pretest ${pre.pct}%</span>` : ''}${post ? `<span class="tag">Posttest ${post.pct}%</span>` : ''}</div>
+      <div class="prog" aria-label="Simulation progress"><i style="width:${Math.round(done / steps * 100)}%"></i></div>
+      <span class="go">${done === 0 ? 'Start' : done >= steps ? 'Review' : 'Continue (' + done + '/' + steps + ' steps)'} &rarr;</span>`;
+    host.append(a);
+  });
+  if (firstUnfinished && firstUnfinished[2] > 0) {
+    const b = document.getElementById('startBtn');
+    b.href = '/lab/experiment.html?exp=' + firstUnfinished[0];
+    b.innerHTML = 'Continue Experiment ' + firstUnfinished[1] + ' &rarr;';
   }
-  for (const k in names) {
-    const b = document.createElement('button'); b.className = 'tab'; b.dataset.k = k; b.textContent = names[k]; b.onclick = () => show(k); tabs.append(b);
-  }
-  show(names[location.hash.slice(1)] ? location.hash.slice(1) : 'Introduction');
 </script>
 </body>
 </html>

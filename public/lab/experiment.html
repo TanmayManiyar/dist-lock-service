@@ -4,18 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Experiment - Distributed Lock Service Virtual Lab</title>
+<link rel="stylesheet" href="/ui.css">
 <link rel="stylesheet" href="/lab/lab.css">
 </head>
 <body>
-<div class="top">
-  <div><span class="brand">Distributed Lock Service Virtual Lab</span><div class="crumb" id="crumb"></div></div>
-  <div><a href="/lab/">All experiments</a> &middot; <a href="/" target="_blank">Raw dashboard</a></div>
-</div>
+<header class="top">
+  <a class="brand-link" href="/lab/">
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+    <span class="brand">Distributed Lock Service Virtual Lab<span class="crumb" id="crumb"></span></span>
+  </a>
+  <nav aria-label="Main"><a class="btn-link" href="/lab/">All experiments</a><a class="btn-link" href="/" target="_blank" rel="noopener">Raw dashboard</a></nav>
+</header>
 <div class="wrap">
-  <h1 id="expTitle"></h1>
+  <div class="exp-head">
+    <div class="eyebrow" id="expNum"></div>
+    <h1 id="expTitle"></h1>
+  </div>
   <div class="tabs" id="tabs"></div>
   <div id="panes"></div>
 </div>
+<p class="foot">Made by <b>Tanmay Maniyar</b></p>
 <script src="/lab/lab.js"></script>
 <script>
   const id = new URLSearchParams(location.search).get('exp') || 'exp2';
