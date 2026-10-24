@@ -2,7 +2,7 @@ if (location.search.includes('embed')) document.documentElement.classList.add('e
 const $ = id => document.getElementById(id);
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) }).then(r => r.json());
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const COLORS = { leader: '#f5b83d', follower: '#4c9aff', candidate: '#ff8a3d', down: '#5b6377' };
+const COLORS = { leader: '#f5b83d', follower: '#4c9aff', candidate: '#ff8a3d', down: '#9aa3b5' };
 let cluster = null;
 
 function nodeState(n) { return n.up ? n.role : 'down'; }
@@ -18,11 +18,11 @@ function drawRing(c) {
     if (a.id >= b.id) continue;
     const cut = (a.blocked || []).includes(b.id) || (b.blocked || []).includes(a.id);
     const dead = !a.up || !b.up;
-    s += `<line x1="${pts[a.id][0]}" y1="${pts[a.id][1]}" x2="${pts[b.id][0]}" y2="${pts[b.id][1]}" stroke="${cut ? '#ff5d6c' : '#27304a'}" stroke-width="${cut ? 1.5 : 1}" stroke-dasharray="${cut ? '4 4' : dead ? '2 4' : ''}" opacity="${cut || !dead ? 1 : .4}"/>`;
+    s += `<line x1="${pts[a.id][0]}" y1="${pts[a.id][1]}" x2="${pts[b.id][0]}" y2="${pts[b.id][1]}" stroke="${cut ? '#ff5d6c' : '#c3cad8'}" stroke-width="${cut ? 1.5 : 1}" stroke-dasharray="${cut ? '4 4' : dead ? '2 4' : ''}" opacity="${cut || !dead ? 1 : .4}"/>`;
   }
   for (const n of c.nodes) {
     const [x, y] = pts[n.id], st = nodeState(n);
-    s += `<circle cx="${x}" cy="${y}" r="26" fill="${COLORS[st]}" opacity="${st === 'down' ? .5 : 1}" ${st === 'leader' ? 'stroke="#fff" stroke-width="2"' : ''}/>
+    s += `<circle cx="${x}" cy="${y}" r="26" fill="${COLORS[st]}" opacity="${st === 'down' ? .5 : 1}" ${st === 'leader' ? 'stroke="#1a2233" stroke-width="2.5"' : ''}/>
       <text x="${x}" y="${y - 2}" text-anchor="middle" font-size="14" font-weight="700" fill="#0f1420">N${n.id}</text>
       <text x="${x}" y="${y + 12}" text-anchor="middle" font-size="10" fill="#0f1420">${n.up ? 't' + n.term : 'down'}</text>`;
   }

@@ -16,7 +16,7 @@ window.EXP = {
 
 <h2>The problem: the client cannot know its lease expired</h2>
 <svg viewBox="0 0 640 210" style="max-width:640px;width:100%" role="img" aria-label="Timeline of a stale write">
-  <g font-family="system-ui" font-size="12" fill="#cfd5e6">
+  <g font-family="system-ui" font-size="12" fill="#2c3548">
   <text x="10" y="40">Client A</text><line x1="90" y1="36" x2="620" y2="36" stroke="#4c9aff" stroke-width="2"/>
   <text x="10" y="100">Client B</text><line x1="90" y1="96" x2="620" y2="96" stroke="#2ecc8f" stroke-width="2"/>
   <text x="10" y="165">Resource</text><line x1="90" y1="161" x2="620" y2="161" stroke="#8a93ab" stroke-width="2"/>

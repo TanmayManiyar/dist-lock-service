@@ -16,15 +16,15 @@ window.EXP = {
 
 <h2>Roles and terms</h2>
 <svg viewBox="0 0 640 170" style="max-width:640px;width:100%" role="img" aria-label="Raft role transitions">
-  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8a93ab"/></marker></defs>
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5b6577"/></marker></defs>
   <g font-family="system-ui" font-size="14" text-anchor="middle">
   <rect x="20" y="60" width="140" height="50" rx="10" fill="#4c9aff"/><text x="90" y="90" fill="#0f1420" font-weight="700">Follower</text>
   <rect x="250" y="60" width="140" height="50" rx="10" fill="#ff8a3d"/><text x="320" y="90" fill="#0f1420" font-weight="700">Candidate</text>
   <rect x="480" y="60" width="140" height="50" rx="10" fill="#f5b83d"/><text x="550" y="90" fill="#0f1420" font-weight="700">Leader</text>
-  <path d="M160,75 L250,75" stroke="#8a93ab" stroke-width="2" marker-end="url(#ar)"/><text x="205" y="64" fill="#8a93ab" font-size="11">timeout</text>
-  <path d="M390,75 L480,75" stroke="#8a93ab" stroke-width="2" marker-end="url(#ar)"/><text x="435" y="64" fill="#8a93ab" font-size="11">majority votes</text>
-  <path d="M320,110 Q320,150 100,112" stroke="#8a93ab" stroke-width="2" fill="none" marker-end="url(#ar)"/><text x="215" y="148" fill="#8a93ab" font-size="11">sees leader / higher term</text>
-  <path d="M550,110 Q550,160 120,112" stroke="#8a93ab" stroke-width="2" fill="none" marker-end="url(#ar)"/><text x="470" y="160" fill="#8a93ab" font-size="11">higher term seen</text>
+  <path d="M160,75 L250,75" stroke="#5b6577" stroke-width="2" marker-end="url(#ar)"/><text x="205" y="64" fill="#5b6577" font-size="11">timeout</text>
+  <path d="M390,75 L480,75" stroke="#5b6577" stroke-width="2" marker-end="url(#ar)"/><text x="435" y="64" fill="#5b6577" font-size="11">majority votes</text>
+  <path d="M320,110 Q320,150 100,112" stroke="#5b6577" stroke-width="2" fill="none" marker-end="url(#ar)"/><text x="215" y="148" fill="#5b6577" font-size="11">sees leader / higher term</text>
+  <path d="M550,110 Q550,160 120,112" stroke="#5b6577" stroke-width="2" fill="none" marker-end="url(#ar)"/><text x="470" y="160" fill="#5b6577" font-size="11">higher term seen</text>
   </g>
 </svg>
 <p>Time is divided into <b>terms</b>, numbered 1, 2, 3, &hellip; Each term has at most one leader. The term acts as a logical clock: a node that sees a higher term than its own immediately adopts it and becomes a follower, so a stale leader can never keep ruling.</p>
@@ -52,7 +52,7 @@ window.EXP = {
 
   steps: [
     { title: 'Find the leader',
-      text: 'Look at the cluster ring: the leader is gold with a white outline. Note its node number and the term shown under each node.',
+      text: 'Look at the cluster ring: the leader is gold with a dark outline. Note its node number and the term shown under each node.',
       predict: 'Which node is the leader, and what term is the cluster in?',
       check: c => upCount(c) === c.n && !!c.leader,
       hint: c => upCount(c) < c.n ? 'Some nodes are down. Restart them or press Reset cluster.' : 'No leader yet - wait a moment.',
