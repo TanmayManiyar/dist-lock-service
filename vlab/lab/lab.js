@@ -27,7 +27,8 @@ function renderQuiz(host, bank, key, onScore) {
   const list = el('<div></div>'), result = el('<div></div>');
   const submit = el('<button class="primary">Submit quiz</button>');
   const count = el('<span class="count"></span>');
-  const qbar = el('<div class="qbar"></div>'); qbar.append(submit, count);
+  const resetBtn = el('<button type="button" title="Clear your answers and your saved score for this test">&#8635; Reset test</button>');
+  const qbar = el('<div class="qbar"></div>'); qbar.append(submit, resetBtn, count);
   const prev = store.get(key);
   host.append(bar, list, qbar, result);
   let level = 'All', shown = [], submitted = false;
@@ -56,6 +57,7 @@ function renderQuiz(host, bank, key, onScore) {
     updateCount();
   }
   chips.forEach(c => c.onclick = () => { level = c.dataset.l; draw(); });
+  resetBtn.onclick = () => { store.set(key, null); draw(); window.dispatchEvent(new Event('vlab:progress')); host.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   submit.onclick = () => {
     let score = 0;
     [...list.children].forEach((box, i) => {
@@ -78,8 +80,6 @@ function renderQuiz(host, bank, key, onScore) {
     result.append(card);
     store.set(key, { score, total: shown.length, pct, level: value(), at: Date.now() });
     if (onScore) onScore(result, { score, total: shown.length, pct });
-    const retry = el('<button type="button">Try again</button>'); retry.onclick = () => { draw(); host.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-    result.append(retry);
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     window.dispatchEvent(new Event('vlab:progress'));
   };
@@ -142,36 +142,80 @@ function buildExperiment(EXP) {
     $('#p-' + n).append(pg);
   });
 
-  // ---- simulation lab panel ----
+  // ---- simulation: steps first, then the working area ----
+  const PANELS = { exp1: ['lock', 'log'], exp2: ['cluster', 'log'], exp3: ['cluster', 'lock', 'log'], exp4: ['cluster', 'lock', 'log'], exp5: ['cluster', 'lock', 'fence', 'log'], exp6: ['cluster', 'lock', 'log'] };
+  const panels = EXP.panels || PANELS[EXP.id] || ['cluster', 'lock', 'fence', 'log'];
+  const focusOf = html => {
+    const t = html.replace(/<[^>]+>/g, ' '), f = [];
+    if (/Lock client|Acquire|Renew|Release|held locks/i.test(t)) f.push('lock');
+    if (/\b(Kill|Restart|Isolate|Split|Heal)\b|\bring\b|node table|Wipe disk|Log and Commit|Term column|cluster/i.test(t)) f.push('cluster');
+    if (/Protected resource|Write with token/i.test(t)) f.push('fence');
+    if (/event log/i.test(t)) f.push('log');
+    return f.filter(x => panels.includes(x));
+  };
   function buildSim(pane, EXP) {
-    pane.innerHTML = `<div class="sim"><div class="sim-main"><iframe id="dash" title="Lock service dashboard" scrolling="no"></iframe></div>
-      <aside class="panel" aria-label="Lab panel">
-        <div class="panel-h"><div><div class="eyebrow">Lab panel</div><div class="prog-text" id="progText"></div></div><div class="live" id="live">connecting...</div></div>
+    pane.innerHTML = `<div class="sim">
+      <section class="steps-area" id="stepsArea" aria-label="Steps of this experiment">
+        <div class="sa-head">
+          <div><div class="eyebrow">Part 1 &middot; Your steps</div><h2>Follow these steps in order</h2></div>
+          <div class="sa-actions"><span class="prog-text" id="progText"></span><button class="warn" id="reset" title="Wipe the cluster and start this experiment again from step 1">&#8635; Reset simulation</button></div>
+        </div>
         <div class="prog"><i id="progBar"></i></div>
-        <div class="cur-step" id="curStep"></div>
-        <details class="fold"><summary>All steps</summary><ul class="steps" id="stepList"></ul></details>
-        <details class="fold" id="foldObs"><summary>Your observations</summary><textarea id="obs" placeholder="Write what you predicted and what actually happened..."></textarea></details>
-        ${EXP.tools ? '<details class="fold" id="foldTools"><summary>Extra tools</summary><div id="tools"></div></details>' : ''}
-        <details class="fold" id="foldSet"><summary>Protocol settings</summary><div id="toggles"></div></details>
-        <div class="row"><button class="warn" id="reset" title="Wipe all nodes and start from a clean cluster">Reset cluster</button><button id="restartLab" title="Mark all steps as not done">Restart experiment</button></div>
-      </aside></div>`;
+        <div class="sa-body">
+          <ol class="stepper" id="stepList" aria-label="All steps"></ol>
+          <div class="cur-step" id="curStep"></div>
+        </div>
+        <div class="toolbox">
+          <details class="fold" id="foldSet"><summary>Protocol settings <span class="help" tabindex="0" data-tip="Switches that turn safety features on or off. Some steps ask you to change them to see what each one protects against.">?</span></summary><div id="toggles"></div></details>
+          ${EXP.tools ? '<details class="fold" id="foldTools"><summary>Extra tools</summary><div id="tools"></div></details>' : ''}
+          <details class="fold" id="foldObs"><summary>My notes</summary><textarea id="obs" placeholder="Write what you predicted and what actually happened..."></textarea></details>
+        </div>
+      </section>
+      <section class="work-area" id="workArea" aria-label="Working area">
+        <div class="wa-head">
+          <div><div class="eyebrow">Part 2 &middot; Working area</div><h2>The live lock service</h2></div>
+          <span class="live" id="live">connecting...</span>
+        </div>
+        <p class="explain">This is where you do the step above. Cards with a blue outline are the ones the current step uses. Hover over the <b>?</b> icons for explanations.</p>
+        <iframe id="dash" title="Lock service dashboard" scrolling="no"></iframe>
+      </section>
+    </div>
+    <div class="minibar" id="miniBar" hidden><div class="mb-text"><b id="mbStep"></b><span id="mbChk"></span></div><button class="sm primary" id="mbUp">&uarr; Steps</button><button class="sm warn" id="mbReset">&#8635; Reset</button></div>`;
   }
-  let timer = null, cluster = null, cur = 0, done = store.get(EXP.id + '.done', []), base = {}, ro = null;
+  let timer = null, cluster = null, cur = 0, done = store.get(EXP.id + '.done', []), base = {}, ro = null, io = null, simOn = false, focusList = [];
+  const dashWin = () => { try { return $('#dash').contentWindow; } catch { return null; } };
+  function applyFocus() { const w = dashWin(); if (w && w.setFocus) w.setFocus(focusList); }
+  async function resetSim() {
+    $('#reset').disabled = true;
+    done = []; store.set(EXP.id + '.done', done); cur = 0; base = {};
+    if (EXP.onReset) EXP.onReset();
+    const w = dashWin();
+    try { if (w && w.resetSim) await w.resetSim(); else await api('/api/reset', {}); } catch { await api('/api/reset', {}); }
+    drawSteps(); window.dispatchEvent(new Event('vlab:progress'));
+    setTimeout(() => { $('#reset').disabled = false; renderToggles(); }, 1500);
+  }
   function startSim() {
+    simOn = true;
     const f = $('#dash');
     if (!f.src) {
       f.onload = () => { // size the embedded dashboard to its content so the page has one scrollbar, not two
         try {
-          const d = f.contentDocument, fit = () => { f.style.height = Math.max(640, d.documentElement.scrollHeight) + 'px'; };
+          const d = f.contentDocument, fit = () => { f.style.height = Math.max(420, d.documentElement.scrollHeight) + 'px'; };
           fit(); if (ro) ro.disconnect(); ro = new ResizeObserver(fit); ro.observe(d.body);
         } catch {}
+        applyFocus();
       };
-      f.src = '/?embed=1';
+      f.src = '/?embed=1&show=' + panels.join(',');
     }
     $('#obs').value = store.get(EXP.id + '.obs', '');
     $('#obs').oninput = e => store.set(EXP.id + '.obs', e.target.value);
-    $('#reset').onclick = async () => { $('#reset').disabled = true; await api('/api/reset', {}); base = {}; setTimeout(() => { $('#reset').disabled = false; renderToggles(); }, 1500); };
-    $('#restartLab').onclick = () => { done = []; store.set(EXP.id + '.done', done); cur = 0; base = {}; drawSteps(); window.dispatchEvent(new Event('vlab:progress')); };
+    $('#reset').onclick = resetSim;
+    $('#mbReset').onclick = resetSim;
+    $('#mbUp').onclick = () => $('#stepsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!io) { // when the steps scroll out of view, show a slim bar that keeps the current step visible
+      io = new IntersectionObserver(([e]) => { $('#miniBar').hidden = !simOn || e.isIntersecting || e.boundingClientRect.top > 0; }, { rootMargin: '-110px 0px 0px 0px' });
+      io.observe($('#stepsArea'));
+    }
     if (EXP.tools && !$('#tools').children.length) {
       EXP.tools.forEach(t => {
         const row = el(`<div class="tog"><span>${t.label}</span><span><select aria-label="Node">${[1, 2, 3, 4, 5].map(n => `<option value="${n}">N${n}</option>`).join('')}</select> <button class="warn sm">${t.button}</button></span></div>`);
@@ -183,13 +227,15 @@ function buildExperiment(EXP) {
     if (!timer) timer = setInterval(tick, 500);
     tick();
   }
-  function stopSim() { clearInterval(timer); timer = null; }
+  function stopSim() { simOn = false; clearInterval(timer); timer = null; const mb = $('#miniBar'); if (mb) mb.hidden = true; }
   async function renderToggles() {
     const c = await api('/api/config');
     const t = $('#toggles');
-    const sw = (id, label, on) => `<div class="tog"><span>${label}</span><button data-k="${id}" class="sm ${on ? 'good' : 'warn'}" aria-pressed="${on}">${on ? 'ON' : 'OFF'}</button></div>`;
-    t.innerHTML = sw('prevote', 'PreVote', c.prevote) + sw('checkQuorum', 'Leader check-quorum', c.checkQuorum) + sw('fencing', 'Fencing check at resource', c.fencing) +
-      `<div class="tog"><span>Election timeout</span><select id="et" aria-label="Election timeout">
+    const sw = (id, label, tip, on) => `<div class="tog"><span>${label} <span class="help" tabindex="0" data-tip="${tip}">?</span></span><button data-k="${id}" class="sm ${on ? 'good' : 'warn'}" aria-pressed="${on}">${on ? 'ON' : 'OFF'}</button></div>`;
+    t.innerHTML = sw('prevote', 'PreVote', 'Before starting a real election, a machine first asks if it could win. Stops a cut-off machine from disrupting the cluster when it returns.', c.prevote)
+      + sw('checkQuorum', 'Leader check-quorum', 'A leader that cannot reach a majority of machines steps down by itself instead of pretending to lead.', c.checkQuorum)
+      + sw('fencing', 'Fencing check at resource', 'When ON, the storage refuses writes that carry an old token.', c.fencing)
+      + `<div class="tog"><span>Election timeout <span class="help" tabindex="0" data-tip="How long a follower waits without hearing from the leader before starting an election. The leader sends a heartbeat every 120 ms.">?</span></span><select id="et" aria-label="Election timeout">
         <option value="600-1100">600-1100 ms (default)</option><option value="1500-2500">1500-2500 ms (slow)</option>
         <option value="50-100">50-100 ms (shorter than heartbeat)</option></select></div>`;
     $('#et').value = `${c.electionMin}-${c.electionMax}`;
@@ -197,23 +243,28 @@ function buildExperiment(EXP) {
     t.querySelectorAll('button[data-k]').forEach(b => b.onclick = async () => { await api('/api/config', { [b.dataset.k]: b.textContent !== 'ON' }); renderToggles(); });
   }
   function drawSteps() {
-    $('#stepList').innerHTML = EXP.steps.map((s, i) => `<li class="${done.includes(i) ? 'done' : ''} ${i === cur ? 'cur' : ''}" data-i="${i}"><span class="ic">${done.includes(i) ? '&#10003;' : i + 1}</span><span>${esc(s.title)}</span></li>`).join('');
-    $('#stepList').querySelectorAll('li').forEach(li => li.onclick = () => { cur = +li.dataset.i; base = {}; drawSteps(); });
+    $('#stepList').innerHTML = EXP.steps.map((s, i) => `<li class="${done.includes(i) ? 'done' : ''} ${i === cur ? 'cur' : ''}" data-i="${i}" tabindex="0"><span class="ic">${done.includes(i) ? '&#10003;' : i + 1}</span><span>${esc(s.title)}</span></li>`).join('');
+    $('#stepList').querySelectorAll('li').forEach(li => { const go = () => { cur = +li.dataset.i; base = {}; drawSteps(); }; li.onclick = go; li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }; });
     const s = EXP.steps[cur];
     const all = done.length === EXP.steps.length;
     $('#progText').textContent = all ? 'All steps complete' : `Step ${cur + 1} of ${EXP.steps.length}`;
     $('#progBar').style.width = Math.round(done.length / EXP.steps.length * 100) + '%';
     const cs = $('#curStep'); cs.classList.toggle('done', all);
+    focusList = all ? [] : focusOf(s.text + ' ' + s.title);
     cs.innerHTML = all
-      ? '<div class="st">&#10003; All steps complete</div><p>Write up your observations, then take the Posttest.</p><button class="primary" id="toPost">Go to the Posttest &rarr;</button>'
-      : `<div class="st">${esc(s.title)}</div><p>${s.text}</p><div class="predict"><b>Predict first:</b> ${s.predict}</div><div class="chk no" id="chk">Waiting for you to do this step...</div>`;
+      ? '<div class="st">&#10003; All steps complete</div><p>Write what you noticed in "My notes", then take the Posttest.</p><button class="primary" id="toPost">Go to the Posttest &rarr;</button>'
+      : `<div class="eyebrow">Step ${cur + 1}</div><div class="st">${esc(s.title)}</div><p>${s.text}</p><div class="predict"><b>Think first:</b> ${s.predict}</div><div class="chk no" id="chk">Waiting for you to do this step...</div><button class="sm" id="toWork">Go to the working area &darr;</button>`;
     if (all) $('#toPost').onclick = () => { show('Posttest'); window.scrollTo({ top: 0 }); };
+    else $('#toWork').onclick = () => $('#workArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('#mbStep').textContent = all ? 'All steps complete' : `Step ${cur + 1}/${EXP.steps.length}: ${s.title}`;
+    $('#mbChk').textContent = '';
     // open the folds a step refers to, so the control is in view
     if (!all) {
       const t = s.text;
       if (/Protocol settings/.test(t)) $('#foldSet').open = true;
       if (/Extra tools/.test(t) && $('#foldTools')) $('#foldTools').open = true;
     }
+    applyFocus();
     window.dispatchEvent(new Event('vlab:progress'));
   }
   async function tick() {
@@ -229,7 +280,7 @@ function buildExperiment(EXP) {
       if (s.check(cluster, base)) {
         if (!done.includes(cur)) done.push(cur);
         store.set(EXP.id + '.done', done);
-        const c = $('#chk'); if (c) { c.className = 'chk ok'; c.textContent = 'Step complete: ' + s.ok; $('#curStep').classList.add('done'); }
+        const c = $('#chk'); if (c) { c.className = 'chk ok'; c.textContent = 'Step complete: ' + s.ok; $('#curStep').classList.add('done'); $('#mbChk').textContent = ' ✓ done'; }
         $('#progBar').style.width = Math.round(done.length / EXP.steps.length * 100) + '%';
         const next = EXP.steps.findIndex((_, i) => !done.includes(i));
         // take the next step's baseline now, so anything the learner does during the pause still counts
@@ -237,7 +288,7 @@ function buildExperiment(EXP) {
         setTimeout(() => { if (next >= 0) { cur = next; base = nb; } drawSteps(); }, 1800);
         base.locked = true;
       } else if (s.hint) {
-        const c = $('#chk'); if (c && !c.classList.contains('ok')) c.textContent = s.hint(cluster, base) || 'Waiting for you to do this step...';
+        const c = $('#chk'); if (c && !c.classList.contains('ok')) { c.textContent = s.hint(cluster, base) || 'Waiting for you to do this step...'; $('#mbChk').textContent = ' · ' + c.textContent; }
       }
     } catch { $('#live').textContent = 'gateway unreachable'; }
   }

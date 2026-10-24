@@ -32,7 +32,7 @@
   </nav>
 
   <section class="section" id="experiments">
-    <h2>List of experiments</h2>
+    <div class="sec-head"><h2>List of experiments</h2><button id="resetAll" title="Clear your saved step progress, notes and quiz scores for every experiment">&#8635; Reset all progress</button></div>
     <div class="cards" id="expCards"></div>
   </section>
 
@@ -88,6 +88,8 @@
   ];
   const read = k => { try { return JSON.parse(localStorage.getItem('vlab.' + k)); } catch { return null; } };
   const host = document.getElementById('expCards');
+  function render() {
+  host.innerHTML = '';
   let firstUnfinished = null;
   EXPS.forEach(([id, title, desc, steps, time], i) => {
     const done = (read(id + '.done') || []).length, pre = read(id + '.pre'), post = read(id + '.post');
@@ -100,11 +102,18 @@
       <span class="go">${done === 0 ? 'Start' : done >= steps ? 'Review' : 'Continue (' + done + '/' + steps + ' steps)'} &rarr;</span>`;
     host.append(a);
   });
+  const b = document.getElementById('startBtn');
   if (firstUnfinished && firstUnfinished[2] > 0) {
-    const b = document.getElementById('startBtn');
     b.href = '/lab/experiment.html?exp=' + firstUnfinished[0];
     b.innerHTML = 'Continue Experiment ' + firstUnfinished[1] + ' &rarr;';
+  } else { b.href = '/lab/experiment.html?exp=exp1'; b.innerHTML = 'Start Experiment 1 &rarr;'; }
   }
+  render();
+  document.getElementById('resetAll').onclick = () => {
+    if (!confirm('Reset ALL progress? This clears the step progress, notes and quiz scores of every experiment saved in this browser.')) return;
+    try { Object.keys(localStorage).filter(k => k.startsWith('vlab.')).forEach(k => localStorage.removeItem(k)); } catch {}
+    render();
+  };
 </script>
 </body>
 </html>

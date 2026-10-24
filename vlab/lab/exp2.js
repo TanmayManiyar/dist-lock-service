@@ -4,6 +4,7 @@ const upCount = c => c.nodes.filter(n => n.up).length;
 const ctx = {}; // remembers the node killed in step 2 for step 3
 
 window.EXP = {
+  onReset: () => { for (const k in ctx) delete ctx[k]; },
   id: 'exp2',
   title: 'Experiment 2: Raft Leader Election and Failover',
 
@@ -58,7 +59,7 @@ window.EXP = {
       hint: c => upCount(c) < c.n ? 'Some nodes are down. Restart them or press Reset cluster.' : 'No leader yet - wait a moment.',
       ok: 'You identified a healthy 5-node cluster with one leader.' },
     { title: 'Kill the leader',
-      text: 'Press <b>Kill N&lt;leader&gt;</b> in the Fault injection area of the dashboard. Watch the ring and the event log.',
+      text: 'Press <b>Kill N&lt;leader&gt;</b> in the <b>Break things</b> section (or press <b>Crash the leader</b>). Watch the ring and the event log.',
       predict: 'How long will it take for a new leader to appear? Will the term change?',
       baseline: c => ({ leader: c.leader, term: maxTerm(c) }),
       check: (c, b) => { const ok = !!c.leader && c.leader !== b.leader && maxTerm(c) > b.term; if (ok) ctx.old = b.leader; return ok; },

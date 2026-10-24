@@ -33,6 +33,12 @@ I'll show you the frontend, which is the dashboard, then the backend, which is t
 
 **SAY:** "This is a single web page built with plain HTML, CSS and JavaScript. It refreshes every half second by asking the backend for the cluster's state. There are five cards."
 
+### 2.1b The "Start here" guide and Reset
+
+**DO:** Point at the blue **Start here** box at the top, then at the red **Reset simulation** button in the top bar.
+
+**SAY:** "A new visitor does not have to guess what to do. This box lists six steps in order, and each has a button that does the step for you: take a lock, ask again as someone else, crash the leader, cut the network, run the fencing demo. If things get messy at any point, **Reset simulation** puts everything back to a fresh, healthy cluster. Under it is the Working area, where everything happens. Each card starts with a one-line explanation, and the small question marks explain the technical words. The coloured sentence above the ring always says in plain English what the cluster is doing right now."
+
 ### 2.2 Cluster card (ring and node table)
 
 **DO:** Point at the ring, the legend, and the table under it.
@@ -69,7 +75,7 @@ The table shows for each node its role, its term, how many entries are in its lo
 
 **SAY:** "The old leader comes back as a follower and catches up. It does not take over again."
 
-**DO:** Click **Isolate leader**.
+**DO:** Click **Isolate leader** in the Break things box.
 
 **SAY:** "Now I cut the leader off from the network but leave it running. The dashed red lines are broken links. The four others elect a new leader. The cut-off node notices it can't reach a majority and steps down. This is a network partition, the hardest failure for a lock service, because both sides are alive and each thinks the other died."
 

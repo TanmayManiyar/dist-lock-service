@@ -4,6 +4,7 @@ const grabTok = (c, re, since) => H.client(c, re, since).map(e => +(e.msg.match(
 const res5 = c => (c.resource || {})['shared-file'];
 
 window.EXP = {
+  onReset: () => { for (const k in ctx5) delete ctx5[k]; },
   id: 'exp5',
   title: 'Experiment 5: Fencing Tokens',
 

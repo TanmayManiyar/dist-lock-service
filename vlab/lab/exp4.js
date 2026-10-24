@@ -74,7 +74,7 @@ window.EXP = {
       hint: c => `${!healed(c) ? 'Network still cut. ' : ''}${!allCfg(c, 'checkQuorum', true) ? 'Check-quorum still OFF. ' : ''}${H.leaders(c).length !== 1 ? 'Waiting for one leader.' : ''}`,
       ok: 'The lower-term leader saw the higher term and stepped down.' },
     { title: 'Inflate a term',
-      text: 'Turn <b>PreVote OFF</b>, then press <b>Split majority | minority</b>. Two nodes are now isolated. Wait 4 seconds and compare the <b>Term</b> column.',
+      text: 'Turn <b>PreVote OFF</b>, then press <b>Split 3 | 2</b>. Two nodes are now isolated. Wait 4 seconds and compare the <b>Term</b> column.',
       predict: 'The minority can never win an election. Will its term stay put?',
       check: c => c.nodes.some(n => n.up && n.config && n.config.prevote === false) && !!c.leader && c.nodes.some(n => n.up && n.role !== 'leader' && n.term >= H.node(c, c.leader).term + 3),
       hint: c => `PreVote must be OFF and the cluster split. Leader term: ${c.leader ? H.node(c, c.leader).term : '-'}.`,

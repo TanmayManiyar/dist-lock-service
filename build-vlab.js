@@ -17,7 +17,7 @@ const edit = (file, pairs) => {
   for (const [a, b] of pairs) { if (!s.includes(a)) throw new Error(file + ': missing ' + a); s = s.replace(a, b); }
   fs.writeFileSync(p, s);
 };
-edit('index.html', [['<script src="app.js"></script>', '<script src="/sim.js"></script>\n<script src="app.js"></script>']]);
+edit('index.html', [['<script src="/app.js"></script>', '<script src="/sim.js"></script>\n<script src="/app.js"></script>']]);
 edit('lab/experiment.html', [
   ['<script src="/lab/lab.js"></script>', '<script src="/sim.js"></script>\n<script src="/lab/lab.js"></script>'],
   ['<div class="tabs" id="tabs"></div>', '<div class="notice"><span>The lock cluster in this lab is a simulation that runs entirely in your browser: nothing is sent to a server, and every visitor gets a private cluster. Keep this tab in the foreground while you work (browsers slow down background tabs, which can trigger extra elections).</span></div>\n  <div class="tabs" id="tabs"></div>'],
