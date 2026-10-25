@@ -248,6 +248,7 @@ function buildExperiment(EXP) {
     t.querySelectorAll('button[data-k]').forEach(b => b.onclick = async () => { await api('/api/config', { [b.dataset.k]: b.textContent !== 'ON' }); renderToggles(); });
   }
   function drawSteps() {
+    $('.sa-body').append($('#curStep')); // park the step box before the list is rebuilt
     $('#stepList').innerHTML = EXP.steps.map((s, i) => `<li class="${done.includes(i) ? 'done' : ''} ${i === cur ? 'cur' : ''}" data-i="${i}" tabindex="0"><span class="ic">${done.includes(i) ? '&#10003;' : i + 1}</span><span>${esc(s.title)}</span></li>`).join('');
     $('#stepList').querySelectorAll('li').forEach(li => { const go = () => { cur = +li.dataset.i; base = {}; drawSteps(); }; li.onclick = go; li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }; });
     const s = EXP.steps[cur];
@@ -262,6 +263,12 @@ function buildExperiment(EXP) {
     if (s.confirm && $('#ackBtn')) $('#ackBtn').onclick = () => { base.ack = true; $('#ackBtn').remove(); tick(); };
     if (all) $('#toPost').onclick = () => { show('Posttest'); window.scrollTo({ top: 0 }); };
     else $('#toWork').onclick = () => $('#workArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // the step box opens directly under its own entry in the list (at the end of the list once everything is done)
+    const holder = document.createElement('li'); holder.className = 'stepbox'; holder.append(cs);
+    const curLi = $('#stepList').querySelector('li.cur');
+    if (curLi && !all) curLi.after(holder); else $('#stepList').append(holder);
+    const sa = $('#stepsArea');
+    if (sa.scrollHeight > sa.clientHeight + 4) holder.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     $('#mbStep').textContent = all ? 'All steps complete' : `Step ${cur + 1}/${EXP.steps.length}: ${s.title}`;
     $('#mbChk').textContent = '';
     // open the folds a step refers to, so the control is in view
