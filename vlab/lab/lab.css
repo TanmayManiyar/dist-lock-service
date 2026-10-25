@@ -253,21 +253,6 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 360px,#fff 100%) fixed}
 .minibar{background:linear-gradient(90deg,#312e81,#0e7490)}
 #dlNotes{background:linear-gradient(90deg,#4f46e5,#7c3aed);border-color:#4f46e5}
 
-/* ---------- simulation tab: steps left (1/4, own scrollbar), live system right (fits the screen) ---------- */
-@media (min-width:900px) and (min-height:480px){
-  body.sim-on .exp-head,body.sim-on .foot{display:none}
-  body.sim-on .wrap{max-width:none;padding:6px 16px 8px}
-  body.sim-on .tabs{margin:6px -4px 10px}
-  #p-Simulation .pager{display:none}
-  .sim{display:grid;grid-template-columns:minmax(300px,25%) minmax(0,1fr);gap:14px;height:calc(100vh - 150px);min-height:440px}
-  .steps-area{overflow-y:auto;min-height:0;height:100%;padding:14px}
-  .sa-body{grid-template-columns:1fr}
-  .sa-head{align-items:flex-start}
-  .work-area{display:flex;flex-direction:column;min-height:0;height:100%;padding:10px 12px}
-  .work-area .explain{display:none}
-  .sim iframe{flex:1;min-height:0;height:100%}
-  .minibar{display:none!important}
-  #toWork{display:none}
 }
 .xcard,.q,.work-area,.fold,.scorecard{backdrop-filter:blur(8px)}
 .xcard{background-color:rgba(255,255,255,.55)}
@@ -276,16 +261,34 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 360px,#fff 100%) fixed}
 .tabs,.top{backdrop-filter:blur(8px)}
 .tabs{background:rgba(255,255,255,.7)}
 
-@media (min-width:900px) and (min-height:480px){
-  .sim iframe{border:0;border-radius:0;background:transparent}
-  .work-area{padding:8px 10px 6px}
-  .wa-head h2{font-size:16px;margin-top:0}
-  .wa-head .eyebrow{display:none}
-  .wa-head{align-items:center;margin-bottom:4px}
-}
 
 /* the step box sits inside the list, right under the current step */
 .stepper li.stepbox{display:block;padding:0;border:0;background:none;cursor:default;margin:2px 0 8px}
 .stepper li.stepbox:hover{background:none}
 .stepper li.stepbox .cur-step{margin:0}
 .sa-body{display:block}
+
+
+/* =====================================================================
+   Simulation tab = exactly two sections:
+     1. STEPS (left, a quarter of the width): the list, the open step right under its entry, settings, notes. Scrolls on its own.
+     2. LIVE SYSTEM (right): the dashboard. Nothing is clipped; if the screen is short it scrolls as one.
+   ===================================================================== */
+.sa-body{display:block}
+@media (min-width:900px) and (min-height:520px){
+  body.sim-on .exp-head,body.sim-on .foot{display:none}
+  body.sim-on .wrap{max-width:none;padding:6px 16px 10px}
+  body.sim-on .tabs{margin:6px -4px 10px}
+  #p-Simulation .pager{display:none}
+  .sim{display:grid;grid-template-columns:minmax(290px,25%) minmax(0,1fr);gap:16px;height:calc(100vh - 148px);min-height:460px}
+  .steps-area{min-height:0;height:100%;overflow-y:auto;padding:14px}
+  .sa-head{flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .sa-head h2{font-size:18px}
+  .sa-actions{width:100%;justify-content:space-between;gap:8px}
+  .prog{margin-bottom:12px}
+  .work-area{display:block;min-height:0;height:100%;padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none}
+  .wa-head,.work-area .explain{display:none}
+  .sim iframe{display:block;width:100%;height:100%;border:1px solid var(--line);border-radius:var(--radius);background:rgba(255,255,255,.55)}
+  .minibar{display:none!important}
+  #toWork{display:none}
+}

@@ -16,7 +16,7 @@ if (only.length) {
 // inside the lab the steps refer to the node table, so keep it open
 document.querySelectorAll('.more').forEach(d => { d.open = true; });
 // fit-to-screen layout: the cluster gets a full-width row, every other visible card gets a column under it
-document.documentElement.style.setProperty('--cols', Math.max(1, document.querySelectorAll('[data-card]:not([hidden]):not([data-card=cluster])').length));
+document.documentElement.style.setProperty('--cols', Math.max(1, document.querySelectorAll('[data-card=lock]:not([hidden]),[data-card=fence]:not([hidden])').length));
 // lab: highlight the cards the current step needs
 window.setFocus = list => document.querySelectorAll('[data-card]').forEach(c => c.classList.toggle('focus', (list || []).includes(c.dataset.card)));
 
@@ -84,10 +84,10 @@ function render(c) {
     : `<tr><td><b>N${n.id}</b></td><td><span class="badge down">down</span></td><td colspan="4" style="color:var(--faint)">crashed: not running</td></tr>`).join('');
 
   const log = $('log'), atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 24;
-  log.innerHTML = c.events.map(e => {
+  log.innerHTML = c.events.slice(-8).map(e => {
     const f = friendly(e.msg);
     const who = e.node === 'client' ? 'You' : 'N' + e.node;
-    return `<div class="ev ${f.cls}" title="${esc(e.msg)}"><time>${new Date(e.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time><span class="who">${who}</span><span>${esc(f.text)}</span></div>`;
+    return `<div class="ev ${f.cls}" title="${esc(e.msg)}"><time>${new Date(e.ts).toLocaleTimeString([], { hour12: false })}</time><span class="who">${who}</span><span>${esc(f.text)}</span></div>`;
   }).join('');
   if (atBottom) log.scrollTop = log.scrollHeight;
 }
