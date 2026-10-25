@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" class="embed">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lock service panel</title>
+<link rel="stylesheet" href="/ui.css">
+<link rel="stylesheet" href="/panel.css">
+</head>
+<body>
+<!-- The live-system panel shown inside the Simulation tab of every experiment.
+     The lock cluster behind it is the in-browser simulation in sim.js. -->
+<div class="page">
+  <main>
+    <div class="col col-a">
+      <section class="card c-cluster" id="card-cluster" data-card="cluster" aria-labelledby="h-cluster">
+        <div class="card-h">
+          <h2 id="h-cluster">Cluster <span class="h-sub">the 5 machines</span></h2>
+          <div class="legend">
+            <span><i class="dot leader"></i>Leader <span class="help" tabindex="0" data-tip="The one machine that receives every request and tells the others what to record.">?</span></span>
+            <span><i class="dot follower"></i>Follower <span class="help" tabindex="0" data-tip="A machine that keeps a copy of everything the leader decides, ready to take over.">?</span></span>
+            <span><i class="dot candidate"></i>Candidate <span class="help" tabindex="0" data-tip="A follower that lost contact with the leader and is asking the others to vote for it.">?</span></span>
+            <span><i class="dot down"></i>Down <span class="help" tabindex="0" data-tip="A crashed machine.">?</span></span>
+          </div>
+        </div>
+        <p class="explain">These 5 machines agree on every lock decision by voting. The service keeps working as long as <b>3 or more</b> machines can talk to each other.</p>
+        <div class="cl-body">
+        <svg id="ring" viewBox="0 0 400 310" role="img" aria-label="The five machines and their roles"></svg>
+          <div class="cl-side">
+        <div class="story" id="story" role="status" aria-live="polite">Starting up&hellip;</div>
+        <div class="fault">
+          <h3>Break things <span class="help" tabindex="0" data-tip="Cause failures on purpose and watch how the service copes.">?</span></h3>
+          <div class="fault-row"><span class="fl">Crash:</span>
+            <button id="crashLeader" class="kill sm" title="Crash the machine that is currently the leader">Crash the leader</button>
+            <span class="btnrow node-actions" id="nodeBtns"></span></div>
+          <div class="fault-row"><span class="fl">Network:</span>
+            <button id="isolateLeader" class="sm" title="Cut the current leader off from every other machine">Isolate leader</button>
+            <button id="splitMajority" class="sm" title="Split the machines into a group of 3 and a group of 2">Split 3 | 2</button>
+            <button id="healBtn" class="good sm" title="Reconnect all machines">Heal network (reconnect)</button></div>
+        </div>
+            <details class="more"><summary>Details of each machine <span class="help" tabindex="0" data-tip="Role: its job right now. Term: the election round number; it goes up every time a new leader is elected. Log: how many operations it has stored. Commit: how many of those are confirmed by a majority. Cut off from: machines it cannot reach.">?</span></summary><table id="nodeTable"><thead><tr><th>Node</th><th>Role</th><th>Term</th><th>Log</th><th>Commit</th><th>Cut off from</th></tr></thead><tbody></tbody></table></details>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="col col-b">
+      <section class="card c-lock" id="card-lock" data-card="lock" aria-labelledby="h-lock">
+        <div class="card-h"><h2 id="h-lock">Lock client <span class="h-sub">ask for a lock</span></h2></div>
+        <p class="explain">Pretend to be a program that wants to use a shared thing. A <b>lock</b> stops two programs using it at once. It is rented for a limited time (a <b>lease</b>) and frees itself when the time is up.</p>
+        <div class="form">
+          <label>Resource <small>name of the thing to lock; any text. Another name = a separate lock</small><input id="key" value="orders-db" title="The name of the thing being locked, for example a database or a file. Any text works. Each name has its own independent lock."></label>
+          <label>Client name <small>who is asking; try client-A, then client-B</small><input id="owner" value="client-A" title="Pretend to be a program. Use different names to play different programs asking for the same lock."></label>
+          <label>Lease (ms) <small>how long you keep it; 8000 = 8 s</small><input id="ttl" type="number" value="8000" min="500"></label>
+          <label>Token <small>filled in by Acquire; needed to Renew or Release</small><input id="token" type="number" placeholder="from acquire"></label>
+        </div>
+        <div class="btnrow">
+          <button id="acq" class="primary" title="Ask for the lock">Acquire</button>
+          <button id="ren" title="Extend the lease before it runs out (needs your token)">Renew</button>
+          <button id="rel" class="warn" title="Give the lock back early (needs your token)">Release</button>
+        </div>
+        <div id="result" class="result" role="status" aria-live="polite">The answer to your last request appears here.</div>
+
+        <h3>Held locks <span class="help" tabindex="0" data-tip="Locks that are currently granted. The bar shows how much of the lease is left; at zero the lock frees itself.">?</span></h3>
+        <table id="lockTable"><thead><tr><th>Resource</th><th>Held by</th><th>Token</th><th>Lease left</th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <section class="card c-fence" id="card-fence" data-card="fence" aria-labelledby="h-fence">
+        <div class="card-h"><h2 id="h-fence">Fencing <span class="h-sub">protect your data</span></h2></div>
+        <p class="explain">A slow program can wake up after its lock expired and still write. Every lock comes with a <b>token</b> (a number that only goes up). The storage below refuses writes with an old token.</p>
+
+        <h3>Protected resource <span class="help" tabindex="0" data-tip="A storage service that only accepts writes carrying a token at least as new as the newest it has seen.">?</span></h3>
+        <div class="form">
+          <label>Value to write <small>any text; the data saved to the storage</small><input id="rvalue" value="data-1" title="Only used by this storage demo: the data the client tries to save. It does not affect the locking."></label>
+          <div class="form-btn"><button id="rwrite" title="Write using the Resource, Client name and Token from the Lock client card">Write with token</button></div>
+        </div>
+        <div id="rresult" class="result" role="status" aria-live="polite">&mdash;</div>
+        <table id="resTable"><thead><tr><th>Resource</th><th>Newest token seen</th><th>Last writer</th><th>Value</th></tr></thead><tbody></tbody></table>
+
+        <h3>Automatic demo <span class="help" tabindex="0" data-tip="Plays the whole scenario for you: A gets a lock and freezes, B takes over, then A wakes up and tries to write.">?</span></h3>
+        <button id="fenceDemo" class="primary">Run the fencing demo</button>
+        <ol id="fenceSteps" class="steps"></ol>
+      </section>
+
+      <section class="card c-log" id="card-log" data-card="log" aria-labelledby="h-log">
+        <div class="card-h"><h2 id="h-log">Event log <span class="h-sub">what happened</span></h2><span class="crumb">Newest at the bottom, scroll for older</span></div>
+        <p class="explain">A live diary of what the machines did and what you asked for. Red lines are failures, gold lines are elections.</p>
+        <div id="log" class="log"></div>
+      </section>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/sim.js"></script>
+<script src="/panel.js"></script>
+</body>
+</html>

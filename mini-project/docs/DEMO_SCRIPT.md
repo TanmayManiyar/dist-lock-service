@@ -9,7 +9,7 @@ cd C:\DistLockService
 npm run fresh
 ```
 
-1. Open http://localhost:8080 in the browser (this is the dashboard, not the lab).
+1. Open http://localhost:8080 in the browser.
 2. Open VS Code on the project folder with `server.js`, `node.js` and `public/app.js` ready in tabs.
 3. Check the top right says "Leader: N? - 5/5 nodes up (quorum 3)".
 
@@ -35,9 +35,9 @@ I'll show you the frontend, which is the dashboard, then the backend, which is t
 
 ### 2.1b The "Start here" guide and Reset
 
-**DO:** Point at the blue **Start here** box at the top, then at the red **Reset simulation** button in the top bar.
+**DO:** Point at the blue **Start here** box at the top, then at the red **Reset cluster** button in the top bar.
 
-**SAY:** "A new visitor does not have to guess what to do. This box lists six steps in order, and each has a button that does the step for you: take a lock, ask again as someone else, crash the leader, cut the network, run the fencing demo. If things get messy at any point, **Reset simulation** puts everything back to a fresh, healthy cluster. Under it is the Working area, where everything happens. Each card starts with a one-line explanation, and the small question marks explain the technical words. The coloured sentence above the ring always says in plain English what the cluster is doing right now."
+**SAY:** "A new visitor does not have to guess what to do. This box lists six steps in order, and each has a button that does the step for you: take a lock, ask again as someone else, crash the leader, cut the network, run the fencing demo. If things get messy at any point, **Reset cluster** puts everything back to a fresh, healthy cluster. Under it is the Working area, where everything happens. Each card starts with a one-line explanation, and the small question marks explain the technical words. The coloured sentence above the ring always says in plain English what the cluster is doing right now."
 
 ### 2.2 Cluster card (ring and node table)
 
@@ -109,17 +109,17 @@ The fix is the fencing token. Each grant gets a number that only goes up. The st
 
 **DO:** Open `public/app.js`.
 
-**SAY:** "On the frontend, `poll()` near line 67 asks `/api/cluster` and `/api/locks` every 500 ms and `render()` redraws the page. The Acquire button, around line 84, just sends a POST to `/api/acquire` with the key, client name and lease. There is no lock logic in the browser at all. The browser only displays what the backend says."
+**SAY:** "On the frontend, `poll()` in `public/app.js` asks `/api/cluster` and `/api/locks` every 500 ms and `render()` redraws the page. The Acquire button just sends a POST to `/api/acquire` with the key, client name and lease. There is no lock logic in the browser at all. The browser only displays what the backend says."
 
 ### 3.2 The gateway: `server.js`
 
 **DO:** Open `server.js` and scroll through these places.
 
-- **Line ~23 `startNode`:** "When the gateway starts it launches five replica processes. This is also how Kill and Restart work: it stops or starts a process."
-- **Line ~50 `statuses` and ~65 `viaLeader`:** "Clients don't know which of the five machines is the leader. `viaLeader` asks the nodes, finds the leader, forwards the request, and if the leader just changed it retries. It remembers the leader to avoid asking every time. Operations that are safe to repeat, like acquire and renew, are retried; release is not."
-- **Line ~86 `resource` and the `/api/resource/write` endpoint:** "This is the protected resource. It stores the highest token per key and rejects lower ones. That is the fencing check."
-- **Line ~88 `applyPartition`:** "To simulate a network cut I tell each node which other nodes it must ignore. That is how Isolate leader and Split cluster work."
-- **Line ~103 `http.createServer`:** "All the endpoints live here: acquire, renew, release, cluster, locks, and the fault buttons. It also serves the dashboard files."
+- **`startNode`:** "When the gateway starts it launches five replica processes. This is also how Kill and Restart work: it stops or starts a process."
+- **`statuses` and `viaLeader`:** "Clients don't know which of the five machines is the leader. `viaLeader` asks the nodes, finds the leader, forwards the request, and if the leader just changed it retries. It remembers the leader to avoid asking every time. Operations that are safe to repeat, like acquire and renew, are retried; release is not."
+- **`resource` and the `/api/resource/write` endpoint:** "This is the protected resource. It stores the highest token per key and rejects lower ones. That is the fencing check."
+- **`applyPartition`:** "To simulate a network cut I tell each node which other nodes it must ignore. That is how Isolate leader and Split cluster work."
+- **`http.createServer`:** "All the endpoints live here: acquire, renew, release, cluster, locks, and the fault buttons. It also serves the dashboard files."
 
 **SAY:** "Notice the gateway keeps no lock data. If it crashed, I could just restart it. All the real state is in the five replicas."
 
@@ -129,17 +129,17 @@ The fix is the fencing token. Each grant gets a number that only goes up. The st
 
 **SAY:** "This file is the heart of the system, under 400 lines with no libraries. It has five parts."
 
-1. **Persistent state (line ~25, `persist`, `loadDisk`):** "Each node writes three things to disk: its current term, who it voted for, and a log of every command. The log is a file that only grows. This is written before replying to any message. So after a crash the node comes back remembering exactly what it promised."
+1. **Persistent state (`persist`, `loadDisk`):** "Each node writes three things to disk: its current term, who it voted for, and a log of every command. The log is a file that only grows. This is written before replying to any message. So after a crash the node comes back remembering exactly what it promised."
 
-2. **The lock state machine (line ~93, `applyCmd`):** "This small function is the lock table. It handles acquire, renew, release and sweep. Look at acquire: if the lock is held and not expired, refuse. Otherwise increase the counter, `++sm.fence`, and that is the fencing token. The time used comes from the command, not from the clock of the machine running it, so all five nodes always make the same decision. The lock table is not saved to disk. It is rebuilt by replaying the log."
+2. **The lock state machine (`applyCmd`):** "This small function is the lock table. It handles acquire, renew, release and sweep. Look at acquire: if the lock is held and not expired, refuse. Otherwise increase the counter, `++sm.fence`, and that is the fencing token. The time used comes from the command, not from the clock of the machine running it, so all five nodes always make the same decision. The lock table is not saved to disk. It is rebuilt by replaying the log."
 
-3. **Leader election (line ~141 `stepDown`, ~179 `raftHandlers`, ~215 `tryElection`):** "If a follower hears nothing from the leader for 600 to 1100 milliseconds, random so they don't all try at once, it starts an election. It first asks the others with a 'pre-vote' that changes nothing, so an isolated node can't keep inflating the term. If it gets a pre-vote majority, it increases the term, votes for itself and asks for votes. Three of five votes, a majority, makes it leader. A node only votes for a candidate whose log is at least as up to date as its own, which guarantees the new leader has every committed lock."
+3. **Leader election (`stepDown`, `raftHandlers`, `tryElection`):** "If a follower hears nothing from the leader for 600 to 1100 milliseconds, random so they don't all try at once, it starts an election. It first asks the others with a 'pre-vote' that changes nothing, so an isolated node can't keep inflating the term. If it gets a pre-vote majority, it increases the term, votes for itself and asks for votes. Three of five votes, a majority, makes it leader. A node only votes for a candidate whose log is at least as up to date as its own, which guarantees the new leader has every committed lock."
 
-4. **Replication and commit (line ~239 `advanceCommit`, ~246 `replicate`, ~270 `propose`):** "When a request arrives, `propose` appends it to the leader's log, then `replicate` sends it to the followers. `advanceCommit` counts how many nodes have stored it. When three of five have, the entry is committed, `applyCmd` runs, and only then is the client told 'OK'. So if a client was told it got the lock, that fact is already on a majority of machines, and a leader crash cannot lose it."
+4. **Replication and commit (`advanceCommit`, `replicate`, `propose`):** "When a request arrives, `propose` appends it to the leader's log, then `replicate` sends it to the followers. `advanceCommit` counts how many nodes have stored it. When three of five have, the entry is committed, `applyCmd` runs, and only then is the client told 'OK'. So if a client was told it got the lock, that fact is already on a majority of machines, and a leader crash cannot lose it."
 
-5. **Timers (line ~282):** "Every 120 ms the leader sends heartbeats. If a leader can't reach a majority for 1.5 seconds it steps down, so a cut-off leader doesn't pretend to lead. Every 300 ms the leader checks for expired leases and records a 'sweep' in the log, so all replicas delete expired locks at the same point."
+5. **Timers :** "Every 120 ms the leader sends heartbeats. If a leader can't reach a majority for 1.5 seconds it steps down, so a cut-off leader doesn't pretend to lead. Every 300 ms the leader checks for expired leases and records a 'sweep' in the log, so all replicas delete expired locks at the same point."
 
-**DO:** Scroll to line ~359 `crash` and `boot`.
+**DO:** Scroll to `crash` and `boot`.
 
 **SAY:** "Finally, `crash` and `boot` simulate a process dying and restarting. `boot` throws away everything in memory and rebuilds from disk. That is how I test crash recovery."
 

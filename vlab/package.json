@@ -1,0 +1,9 @@
+{
+  "name": "distributed-lock-service-virtual-lab",
+  "version": "1.0.0",
+  "description": "Static virtual lab: six experiments on leases, Raft, replication, partitions, fencing tokens and crash recovery. The lock cluster is simulated in the browser.",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 8099"
+  }
+}

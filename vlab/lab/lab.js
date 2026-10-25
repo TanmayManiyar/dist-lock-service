@@ -200,7 +200,7 @@ function buildExperiment(EXP) {
     const f = $('#dash');
     if (!f.src) {
       f.onload = applyFocus; // the iframe fills the working area; the dashboard inside fits itself, so nothing scrolls
-      f.src = '/?embed=1&show=' + panels.join(',');
+      f.src = '/panel.html?show=' + panels.join(',');
     }
     $('#obs').value = store.get(EXP.id + '.obs', '');
     $('#obs').oninput = e => store.set(EXP.id + '.obs', e.target.value);

@@ -1,5 +1,3 @@
-const qs = new URLSearchParams(location.search);
-if (qs.has('embed')) document.documentElement.classList.add('embed');
 const $ = id => document.getElementById(id);
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) }).then(r => r.json());
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -7,18 +5,8 @@ const COLORS = { leader: '#f5b83d', follower: '#4c9aff', candidate: '#ff8a3d', d
 const ROLE_LABEL = { leader: 'Leader', follower: 'Follower', candidate: 'Candidate', down: 'Down' };
 let cluster = null;
 
-// the lab embeds this page and can limit which cards are shown (?show=cluster,lock,...)
-const only = (qs.get('show') || '').split(',').filter(Boolean);
-if (only.length) {
-  document.querySelectorAll('[data-card]').forEach(c => { c.hidden = !only.includes(c.dataset.card); });
-  if (only.length <= 2) document.documentElement.classList.add('stack');
-}
-// inside the lab the steps refer to the node table, so keep it open
+// inside the node table, keep the per-machine details always open
 document.querySelectorAll('.more').forEach(d => { d.open = true; });
-// fit-to-screen layout: the cluster gets a full-width row, every other visible card gets a column under it
-document.documentElement.style.setProperty('--cols', Math.max(1, document.querySelectorAll('[data-card=lock]:not([hidden]),[data-card=fence]:not([hidden])').length));
-// lab: highlight the cards the current step needs
-window.setFocus = list => document.querySelectorAll('[data-card]').forEach(c => c.classList.toggle('focus', (list || []).includes(c.dataset.card)));
 
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function toast(msg) { const t = $('toast'); if (!t) return; t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 2600); }
@@ -112,7 +100,7 @@ const FRIENDLY = [
   [/^FAULT: wiped disk of node (\d+)/, (a, n) => `wiped the disk of N${n} and restarted it`, 'fault'],
   [/^FAULT: partition (.*)/, (a, g) => `cut the network into groups ${g}`, 'fault'],
   [/^FAULT: network healed/, () => 'reconnected the network', 'ok'],
-  [/^LAB: cluster reset.*/, () => 'reset the simulation to a fresh cluster', 'ok'],
+  [/^RESET: cluster reset.*/, () => 'reset the cluster to a fresh, healthy state', 'ok'],
   [/^CONFIG: prevote=(\w+) checkQuorum=(\w+) election=(\S+)/, (a, p, q, e) => `changed settings (PreVote ${p === 'true' ? 'on' : 'off'}, check-quorum ${q === 'true' ? 'on' : 'off'}, election ${e})`, ''],
   [/^RESOURCE rejected stale write to "(.+)" from (.+) \(token (\d+) < (\d+)\)/, (a, k, o, t, mx) => `✖ storage REFUSED a write to "${k}" from ${o}: token #${t} is older than #${mx} already seen`, 'fault'],
   [/^RESOURCE accepted write to "(.+)" from (.+) \(token (\d+)\)(.*)/, (a, k, o, t, x) => `✔ storage accepted a write to "${k}" from ${o} (token #${t})${x ? ' - fencing is OFF, so nothing was checked' : ''}`, 'ok'],
@@ -223,15 +211,14 @@ async function pollResource() {
 
 // ----- reset + guided walkthrough -----
 async function resetSim() {
-  toast('Resetting the simulation…');
+  toast('Resetting the cluster…');
   await post('/api/reset', {});
   $('token').value = ''; $('owner').value = 'client-A'; $('key').value = 'orders-db'; $('ttl').value = 8000;
   $('result').className = 'result'; $('result').textContent = 'The answer to your last request appears here.';
   $('rresult').className = 'result'; $('rresult').textContent = '—';
   $('fenceSteps').innerHTML = '';
-  setTimeout(() => toast('Simulation reset: a fresh cluster is starting.'), 900);
+  setTimeout(() => toast('Cluster reset: a fresh cluster is starting.'), 900);
 }
-window.resetSim = resetSim;
 $('resetAll').onclick = resetSim;
 $('w-reset').onclick = resetSim;
 
@@ -252,7 +239,7 @@ $('guide').addEventListener('toggle', () => { try { localStorage.setItem('dash.g
 
 // ---------- live backend terminal: real log lines from the gateway and the 5 replica processes ----------
 (function initTerm() {
-  const card = $('card-term'); if (!card || qs.has('embed')) return;
+  const card = $('card-term'); if (!card) return;
   const body = $('termBody'), stat = $('termStat');
   const GROUPS = { all: null, req: ['http', 'route'], raft: ['raft'], lock: ['lock', 'fence'], disk: ['wal', 'boot'], fault: ['fault', 'proc'] };
   let seq = 0, lines = [], src = 'all', node = 'all', details = true, paused = false, follow = true, started = false;
@@ -284,7 +271,7 @@ $('guide').addEventListener('toggle', () => { try { localStorage.setItem('dash.g
         if (r.lines.length) { lines.push(...r.lines); if (lines.length > 2500) lines.splice(0, lines.length - 2500); add(r.lines); count(); }
         stat.textContent = '● live'; stat.className = 'crumb tlive'; started = true;
       } catch {
-        if (!started) { card.hidden = true; return; }                  // static demo without a backend: no terminal
+        if (!started) { stat.textContent = '○ backend not reachable'; stat.className = 'crumb toff'; setTimeout(tick, 1000); return; }
         stat.textContent = '○ backend not reachable'; stat.className = 'crumb toff';
       }
     }

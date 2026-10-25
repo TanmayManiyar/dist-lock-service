@@ -21,17 +21,6 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 380px,#fff 100%) fixed}
 .navhint .arr{font-size:20px;line-height:1;display:inline-block;animation:nudge 1.2s ease-in-out infinite}
 @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
 
-/* Virtual Lab button: glowing, with a ring of light running around its border */
-@property --ring{syntax:"<angle>";initial-value:0deg;inherits:false}
-@keyframes ringspin{to{--ring:360deg}}
-@keyframes glowpulse{0%,100%{opacity:.55}50%{opacity:.95}}
-.navlab{position:relative;isolation:isolate;border:0;border-radius:11px;padding:9px 18px;background:#fff;color:#3730a3;font-weight:800;text-decoration:none;font-size:14.5px}
-.navlab::before,.navlab::after{content:"";position:absolute;inset:-3px;border-radius:14px;z-index:-2;background:conic-gradient(from var(--ring),#22d3ee,#6366f1,#ec4899,#facc15,#22d3ee);animation:ringspin 2.4s linear infinite}
-.navlab::after{filter:blur(9px);z-index:-3;animation:ringspin 2.4s linear infinite,glowpulse 1.8s ease-in-out infinite}
-.navlab:hover{background:#fef9c3;color:#312e81}
-@supports not (background:conic-gradient(from 1turn,red,blue)){.navlab{border:2px solid #facc15}.navlab::before,.navlab::after{display:none}}
-@media (prefers-reduced-motion:reduce){.navlab::before,.navlab::after{animation:none!important}}
-
 /* ---------- the page: two sections ---------- */
 .page{max-width:none;margin:0;padding:14px 18px 6px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
 
@@ -176,34 +165,3 @@ button.primary:hover:not(:disabled){background:linear-gradient(90deg,#4338ca,#6d
 
 .card th,.card td{padding:5px 8px;font-size:13px}
 
-/* ---------- live backend terminal ---------- */
-.term{border-radius:10px;overflow:hidden;background:#0b1220;border:1px solid #1e293b;box-shadow:0 6px 18px rgba(15,23,42,.25)}
-.term-bar{display:flex;align-items:center;gap:7px;padding:8px 12px;background:#111a2e;border-bottom:1px solid #1e293b}
-.td{width:11px;height:11px;border-radius:50%;display:inline-block}.td.r{background:#ff5f57}.td.y{background:#febc2e}.td.g{background:#28c840}
-.term-title{margin-left:8px;color:#94a3b8;font:12px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.term-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 12px;background:#0f1729;border-bottom:1px solid #1e293b}
-.term-tools .chips{display:inline-flex;gap:4px;flex-wrap:wrap;margin:0}
-.term-tools button{background:#1e293b;color:#cbd5e1;border:1px solid #334155;min-height:26px;padding:2px 10px;font-size:12px;border-radius:6px}
-.term-tools button:hover:not(:disabled){background:#27354f;border-color:#475569;color:#fff}
-.term-tools button.on{background:#0d9488;border-color:#0d9488;color:#fff}
-.term-tools select{min-height:26px;padding:2px 6px;font-size:12px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:6px;width:auto}
-.tchk{flex-direction:row;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#cbd5e1}
-.tchk input{width:14px;min-height:0;height:14px;padding:0;accent-color:#0d9488}
-.tspace{flex:1}
-.term-body{height:300px;overflow-y:auto;padding:8px 0;font:12px/1.6 var(--mono);color:#e2e8f0;background:#0b1220}
-.tl{display:grid;grid-template-columns:96px 30px 44px 46px minmax(0,1fr);gap:8px;padding:0 12px}
-.tl:hover{background:#111a2e}
-.tt{color:#64748b}
-.tn{font-weight:700}.tn.gw{color:#22d3ee}.tn.n1{color:#f472b6}.tn.n2{color:#a78bfa}.tn.n3{color:#fbbf24}.tn.n4{color:#34d399}.tn.n5{color:#60a5fa}
-.ts{color:#94a3b8}.s-raft{color:#c4b5fd}.s-lock{color:#6ee7b7}.s-wal{color:#fcd34d}.s-http{color:#7dd3fc}.s-route{color:#94a3b8}.s-fence{color:#f9a8d4}.s-fault{color:#fca5a5}.s-proc,.s-boot{color:#fdba74}
-.tv{font-weight:700}.INFO .tv{color:#4ade80}.DEBUG .tv{color:#64748b}.WARN .tv{color:#fbbf24}.TRACE .tv{color:#475569}
-.tm{overflow-wrap:anywhere}
-.DEBUG .tm{color:#94a3b8}.TRACE .tm{color:#64748b;font-style:italic}.WARN .tm{color:#fde68a}
-.tm b{font-weight:700}.tm b.g{color:#4ade80}.tm b.r{color:#f87171}.tm b.y{color:#facc15}.tm b.c{color:#22d3ee}
-.term-foot{display:flex;justify-content:space-between;gap:12px;padding:6px 12px;background:#111a2e;border-top:1px solid #1e293b;color:#64748b;font:12px var(--mono)}
-.prompt{color:#4ade80}
-.cursor{display:inline-block;width:7px;height:13px;background:#4ade80;vertical-align:-2px;animation:blink 1s steps(2) infinite}
-@keyframes blink{to{visibility:hidden}}
-.crumb.tlive{color:#0b8a5a;font-weight:700}.crumb.toff{color:#d1344a;font-weight:700}
-@media (max-width:760px){.tl{grid-template-columns:78px 28px minmax(0,1fr)}.tl .ts,.tl .tv{display:none}}
-@media (prefers-reduced-motion:reduce){.cursor{animation:none}}

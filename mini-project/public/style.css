@@ -17,20 +17,6 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 380px,#fff 100%) fixed}
 .topnav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .topnav button#resetAll{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.45);color:#fff}
 .topnav button#resetAll:hover{background:#fff;color:#9f1239}
-.navhint{color:#fde68a;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
-.navhint .arr{font-size:20px;line-height:1;display:inline-block;animation:nudge 1.2s ease-in-out infinite}
-@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
-
-/* Virtual Lab button: glowing, with a ring of light running around its border */
-@property --ring{syntax:"<angle>";initial-value:0deg;inherits:false}
-@keyframes ringspin{to{--ring:360deg}}
-@keyframes glowpulse{0%,100%{opacity:.55}50%{opacity:.95}}
-.navlab{position:relative;isolation:isolate;border:0;border-radius:11px;padding:9px 18px;background:#fff;color:#3730a3;font-weight:800;text-decoration:none;font-size:14.5px}
-.navlab::before,.navlab::after{content:"";position:absolute;inset:-3px;border-radius:14px;z-index:-2;background:conic-gradient(from var(--ring),#22d3ee,#6366f1,#ec4899,#facc15,#22d3ee);animation:ringspin 2.4s linear infinite}
-.navlab::after{filter:blur(9px);z-index:-3;animation:ringspin 2.4s linear infinite,glowpulse 1.8s ease-in-out infinite}
-.navlab:hover{background:#fef9c3;color:#312e81}
-@supports not (background:conic-gradient(from 1turn,red,blue)){.navlab{border:2px solid #facc15}.navlab::before,.navlab::after{display:none}}
-@media (prefers-reduced-motion:reduce){.navlab::before,.navlab::after{animation:none!important}}
 
 /* ---------- the page: two sections ---------- */
 .page{max-width:none;margin:0;padding:14px 18px 6px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
@@ -65,7 +51,7 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 380px,#fff 100%) fixed}
 .guide-foot{padding:6px 16px 14px;color:var(--mute);font-size:13.5px}
 
 /* section 2: the live system. Row 1 = the cluster (wide). Row 2 = lock client | fencing | event log. */
-main{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:16px;align-items:stretch;padding:0 0 18px}
+main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch;padding:0 0 18px}
 .col{display:contents}
 .c-cluster,.c-term,.c-log{grid-column:1/-1}.c-cluster{order:1}.c-lock{order:2}.c-fence{order:3}.c-term{order:4}.c-log{order:5}
 @media (max-width:700px){main{grid-template-columns:minmax(0,1fr)}}
@@ -140,7 +126,7 @@ button.primary:hover:not(:disabled){background:linear-gradient(90deg,#4338ca,#6d
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#18202f;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:550;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:100}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
-/* the lab highlights the card a step refers to */
+/* highlights the card a walkthrough step points at */
 .card.focus{position:relative;outline:3px solid var(--accent);outline-offset:3px;box-shadow:0 0 0 8px rgba(37,99,235,.12)}
 .card.focus::before{content:"Do this step here";position:absolute;top:-13px;right:18px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:999px;z-index:5}
 
@@ -156,25 +142,8 @@ button.primary:hover:not(:disabled){background:linear-gradient(90deg,#4338ca,#6d
 }
 @media (max-width:700px){
   .topbar,.page{padding-left:14px;padding-right:14px}
-  .navhint{display:none}
   .fault-row .fl{width:100%}
 }
-
-/* ---------- embedded in the lab: the lab supplies the steps, so only the live system shows ---------- */
-.embed .topbar,.embed .foot,.embed .guide{display:none}
-.embed,.embed body{background:transparent}
-.embed .page{display:block;padding:14px 10px 10px}
-.embed main{overflow:visible;margin:0;padding:0}
-.embed .explain{display:none}
-@media (min-width:900px) and (min-height:520px){
-  .embed body{display:block;height:auto;overflow:visible}
-  .embed main{overflow:visible;padding:0;margin:0}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
-@media (max-height:899px){.explain{display:none}.card h3{margin:10px 0 4px}}
-
-.card th,.card td{padding:5px 8px;font-size:13px}
 
 /* ---------- live backend terminal ---------- */
 .term{border-radius:10px;overflow:hidden;background:#0b1220;border:1px solid #1e293b;box-shadow:0 6px 18px rgba(15,23,42,.25)}

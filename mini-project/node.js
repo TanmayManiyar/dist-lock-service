@@ -20,7 +20,7 @@ const MAJORITY = Math.floor(N / 2) + 1;
 const HEARTBEAT_MS = 120;
 let ELECTION_MIN = 600, ELECTION_MAX = 1100;
 const QUORUM_LOSS_MS = 1500;
-const cfg = { prevote: true, checkQuorum: true, trace: false }; // protocol toggles used by the virtual lab; trace = also record every heartbeat
+const cfg = { prevote: true, checkQuorum: true, trace: false }; // protocol toggles (settable through /admin/config); trace = also record every heartbeat
 
 // ---------- real structured log: printed to this process's stdout AND served at GET /logs for the dashboard terminal ----------
 const logs = []; let logSeq = 0;
@@ -176,6 +176,7 @@ function stepDown(term, why) {
   if (term > st.term) { st.term = term; st.votedFor = null; persist(); }
   if (role !== 'follower') ev(`stepped down to follower (term ${st.term})${why ? ' - ' + why : ''}`);
   role = 'follower';
+  if (leaderId === ID) leaderId = null;   // after stepping down this node no longer knows who leads; never point clients back at itself
   if (wasLeader) {
     for (const [, p] of pending) p.res({ ok: false, error: 'leadership-lost' });
     pending.clear();

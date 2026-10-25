@@ -1,75 +1,10 @@
-# Fault-Tolerant Distributed Lock Service
+# Distributed Lock Service
 
-A Chubby / etcd-style lock coordinator built from scratch (Node.js, zero dependencies).
-Five replicas run Raft consensus; a lock state machine on top provides **leases** and **fencing tokens**.
+Two independent projects live in this repository. They share no code and no server, and each one can be moved, run and deployed on its own.
 
-## Run
-
-Requires Node 18+.
-
-```bash
-npm run fresh      # start gateway + 5 replicas with clean data (npm start keeps data)
-# open http://localhost:8080
-npm test           # in a second terminal: crash / partition / failover checks
-```
-
-## Live backend terminal
-
-The dashboard has a terminal window (card 4) that streams the real log of the running system: the gateway (`server.js`) and each of the 5 replica processes (`node.js`). Nothing in it is simulated. Every replica writes the same lines to its own stdout (so they also appear in the terminal that started the server) and serves them at `GET /logs`; the gateway merges them in time order and serves them at `GET /api/term?since=<seq>`.
-
-It shows requests and leader routing, elections and votes, log replication (`AppendEntries`), `COMMIT` on a majority, the lock decision every replica applies (`GRANTED` / `REFUSED` / `RENEWED` / `RELEASED` / `EXPIRED`), write-ahead-log and term-file writes, fencing checks at the protected resource, and crashes, restarts and partitions. Filter by area or node, turn on per-heartbeat lines, pause, clear, or download the log as a text file. The static virtual lab (`vlab/`) has no backend, so it does not show the terminal.
-
-## What you can do in the dashboard
-
-- Watch roles, terms and log indexes of the 5 replicas live.
-- **Kill / restart** any node, **isolate the leader**, **split the cluster**, **heal the network**.
-- Acquire / renew / release locks as named clients and see the fencing token.
-- Run the **fencing demo**: a stalled client's stale write is rejected by the protected resource.
-
-## Virtual Lab
-
-Open **http://localhost:8080/lab/** for the IIT-style virtual lab (Aim, Theory, Pretest, Procedure, Simulation, Posttest, References, Feedback).
-The Simulation tab embeds this real cluster plus a lab panel that gives guided steps, checks each step automatically, and offers protocol toggles (PreVote, check-quorum, election timeout) and a cluster reset.
-All six experiments are built: 1 leases, 2 leader election, 3 log replication, 4 partitions, 5 fencing tokens, 6 crash recovery. Plan: [docs/VIRTUAL_LAB_PLAN.md](docs/VIRTUAL_LAB_PLAN.md).
-
-### Static virtual lab (no server, deployable to Vercel)
-
-`npm run build:vlab` generates `vlab/`, a static copy of the lab whose lock cluster is an in-browser simulation (`sim.js`: same Raft and lock logic, in-memory network and disks). Each visitor gets a private cluster; nothing runs on a server. Deploy by publishing the `vlab` folder to any static host, e.g. `cd vlab && npx vercel deploy --prod`.
-
-## API (gateway, port 8080)
-
-| Method | Path | Body |
+| Folder | What it is | How it runs |
 |---|---|---|
-| POST | `/api/acquire` | `{key, owner, ttlMs}` -> `{ok, token, expiresAt}` or `{ok:false, error:"held", holder}` |
-| POST | `/api/renew` | `{key, owner, token, ttlMs}` |
-| POST | `/api/release` | `{key, owner, token}` |
-| GET | `/api/locks` | lock table (served by the quorum-confirmed leader) |
-| GET | `/api/cluster` | node roles/terms/events |
-| POST | `/api/resource/write` | `{key, token, owner, value}` - rejects stale tokens |
-| POST | `/api/fault/kill`, `/restart` | `{id}` |
-| GET/POST | `/api/config` | `{prevote, checkQuorum, electionMin, electionMax}` (lab toggles) |
-| POST | `/api/reset` | wipe node data and restart a clean cluster |
-| POST | `/api/fault/partition` | `{groups:[[1,2,3],[4,5]]}`; `/api/fault/heal` |
+| [`mini-project/`](mini-project/) | The real **fault-tolerant distributed lock service**: Raft consensus on 5 replica processes, leases, fencing tokens, a gateway, a dashboard frontend with a live backend terminal, tests and benchmarks | Locally on your own machine: `cd mini-project && npm run fresh`, then open http://localhost:8080 |
+| [`vlab/`](vlab/) | The **Virtual Lab**: six experiments with theory, quizzes and a guided simulation. The lock cluster inside it is an in-browser simulation | A static website. Locally: `cd vlab && npm start`. Deployed on Vercel from this folder only |
 
-## Phase 2: tests, benchmarks, deployment
-
-| What | Command | Details |
-|---|---|---|
-| Basic correctness + failover | `npm test` (server running) | `test.js` |
-| Chaos / fault injection + safety checker | `npm run chaos` (or `chaos:quick`) | `test-chaos.js`: concurrent clients, random crashes, partitions and leader isolation; history checker verifies mutual exclusion, token uniqueness, durability, convergence, liveness |
-| Benchmarks | `npm run bench` | `bench.js` -> [docs/BENCHMARKS.md](docs/BENCHMARKS.md); analysis in [docs/PHASE2.md](docs/PHASE2.md) |
-| Docker (private network, one container per replica) | `npm run docker` | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) (also AWS VPC/EC2 guide) |
-
-## Design
-
-See [docs/PHASE1.md](docs/PHASE1.md) (architecture, data flow, failure strategy) and [docs/architecture.svg](docs/architecture.svg).
-
-Key points: Raft with PreVote and check-quorum, durable term/vote/log, leader no-op on election,
-commands carry timestamps so the state machine is deterministic, lease expiry is replicated via `sweep` commands,
-reads are served only by a leader holding a quorum lease.
-
-## Known limitations (documented trade-offs)
-
-- No log compaction / snapshots, no membership changes.
-- Lease expiry assumes loosely synchronised clocks across replicas.
-- Replicas are local processes standing in for VMs in a VPC; network partitions are simulated at the RPC layer.
+Start with [`mini-project/README.md`](mini-project/README.md) for the project and how to present it, and [`vlab/README.md`](vlab/README.md) for the lab.

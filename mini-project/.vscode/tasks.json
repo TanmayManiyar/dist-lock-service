@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start cluster (fresh data)",
+      "type": "shell",
+      "command": "npm run fresh",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "group": "cluster" }
+    },
+    {
+      "label": "Start cluster and open browser",
+      "type": "shell",
+      "command": "npm run demo",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "group": "cluster" }
+    },
+    {
+      "label": "Run smoke tests (needs the cluster running)",
+      "type": "shell",
+      "command": "npm test",
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "group": "tests" }
+    },
+    {
+      "label": "Run chaos test (20 s)",
+      "type": "shell",
+      "command": "npm run chaos:quick",
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "group": "tests" }
+    },
+    {
+      "label": "Run benchmarks",
+      "type": "shell",
+      "command": "npm run bench",
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "group": "tests" }
+    }
+  ]
+}

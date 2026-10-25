@@ -1,16 +1,17 @@
 {
   "name": "fault-tolerant-distributed-lock-service",
   "version": "1.0.0",
-  "description": "Chubby/etcd-style Raft lock coordinator with leases and fencing tokens",
+  "description": "Chubby/etcd-style Raft lock coordinator with leases and fencing tokens (Mini Project)",
+  "private": true,
+  "engines": { "node": ">=18" },
   "scripts": {
     "start": "node server.js",
     "fresh": "node server.js --fresh",
+    "demo": "node server.js --fresh --open",
     "test": "node test.js",
     "chaos": "node test-chaos.js",
     "chaos:quick": "node test-chaos.js --quick",
     "bench": "node bench.js",
-    "docker": "docker compose up --build",
-    "build:vlab": "node build-vlab.js",
-    "vlab": "node build-vlab.js && npx --yes serve vlab -l 8099"
+    "docker": "docker compose up --build"
   }
 }

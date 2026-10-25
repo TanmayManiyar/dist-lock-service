@@ -36,7 +36,7 @@ function startNode(id) {
   const p = spawn(process.execPath, [path.join(__dirname, 'node.js'), id, N, DATA], { stdio: 'inherit' });
   procs[id] = p;
   glog('proc', 'INFO', `spawned replica N${id}: node node.js ${id} ${N} (pid ${p.pid}, port ${BASE_PORT + id})`);
-  setTimeout(() => { if (procs[id] === p) call(id, '/admin/config', config); }, 700); // re-apply lab toggles after a restart
+  setTimeout(() => { if (procs[id] === p) call(id, '/admin/config', config); }, 700); // re-apply the protocol settings after a restart
   p.on('exit', code => { const planned = procs[id] !== p; if (!planned) delete procs[id]; glog('proc', 'WARN', `replica N${id} process (pid ${p.pid}) ${planned ? 'stopped by the gateway' : 'exited unexpectedly'} (${code === null ? 'killed by signal' : 'exit code ' + code})`); });
 }
 function stopNode(id) { if (isRemote) { call(id, '/admin/crash', {}); return; } const p = procs[id]; if (p) { delete procs[id]; p.kill(); } }
@@ -102,7 +102,7 @@ async function viaLeader(route, body, retry = false) {
     if (id) {
       if (route !== '/client/locks') glog('route', 'DEBUG', `forward ${route} -> N${id}${attempt ? ' (retry ' + attempt + ')' : ''}`); // the dashboard polls the lock table twice a second; that is not logged
       const r = await call(id, route, body);
-      if (r && r.error === 'not-leader') { hint = r.leader || null; glog('route', 'DEBUG', `N${id} says not-leader${hint ? ', redirect hint N' + hint : ''}`); }
+      if (r && r.error === 'not-leader') { hint = r.leader && r.leader !== id ? r.leader : null; glog('route', 'DEBUG', `N${id} says not-leader${hint ? ', redirect hint N' + hint : ''}`); }
       else if (r) {
         const stale = r.error === 'leadership-lost' || r.error === 'timeout';
         if (stale && retry && attempt < 4) continue;   // idempotent op: re-probe, the cached leader may be cut off
@@ -189,7 +189,7 @@ http.createServer(async (req, res) => {
     }
     return json(res, 200, config);
   }
-  if (url === '/api/reset') { // fresh cluster for the next lab experiment
+  if (url === '/api/reset') { // stop everything, wipe the data folder, start a clean cluster
     if (isRemote) {
       await Promise.all([...Array(N).keys()].map(i => call(i + 1, '/admin/wipe', {})));
     } else {
@@ -200,13 +200,9 @@ http.createServer(async (req, res) => {
     }
     partition = null; config = { ...DEFAULT_CONFIG };
     for (const k of Object.keys(resource)) delete resource[k];
-    actionLog.length = 0; logAction('LAB: cluster reset to a clean state');
+    actionLog.length = 0; logAction('RESET: cluster reset to a clean state');
     glog('fault', 'WARN', 'RESET: all replicas stopped, data directory wiped, fresh cluster starting');
     if (!isRemote) for (let i = 1; i <= N; i++) startNode(i);
-    return json(res, 200, { ok: true });
-  }
-  if (url === '/api/feedback' && req.method === 'POST') {
-    fs.appendFileSync(path.join(DATA, 'feedback.jsonl'), JSON.stringify({ ts: Date.now(), ...body }) + '\n');
     return json(res, 200, { ok: true });
   }
   if (url === '/api/fault/wipe') { // simulate losing a node's disk
@@ -232,4 +228,11 @@ http.createServer(async (req, res) => {
     return fs.createReadStream(file).pipe(res);
   }
   res.writeHead(404); res.end('not found');
-}).listen(PORT, () => console.log(`Lock service dashboard: http://localhost:${PORT}  (${N} replicas${isRemote ? ', remote' : ' on :' + (BASE_PORT + 1) + '-:' + (BASE_PORT + N)})`));
+}).listen(PORT, () => {
+  const url = `http://localhost:${PORT}`;
+  console.log(`Lock service dashboard: ${url}  (${N} replicas${isRemote ? ', remote' : ' on :' + (BASE_PORT + 1) + '-:' + (BASE_PORT + N)})`);
+  if (process.argv.includes('--open')) { // npm run demo: open the dashboard in the default browser
+    const cmd = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+    try { spawn(cmd[0], cmd[1], { stdio: 'ignore', detached: true }).on('error', () => {}).unref(); } catch {}
+  }
+});

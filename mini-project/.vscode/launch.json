@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Gateway + 5 replicas (fresh data)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "args": ["--fresh"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "One replica only (N1 of 5)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node.js",
+      "args": ["1", "5", "${workspaceFolder}/data"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Smoke tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/test.js",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Chaos test (quick)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/test-chaos.js",
+      "args": ["--quick"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

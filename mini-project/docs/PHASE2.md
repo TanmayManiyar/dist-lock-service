@@ -10,7 +10,7 @@
 | Durable storage | `node.js` | `term/votedFor` in an atomically renamed meta file; the log in an **append-only write-ahead log** (torn last line ignored on recovery); optional `DURABLE=1` = `fsync` every write |
 | Gateway | `server.js` | leader discovery and caching, redirects, fault-injection control plane, fenced demo resource, optional basic auth |
 | Simulated process crash | `node.js` (`/admin/crash`, `/admin/start`, `/admin/wipe`) | lets the same fault buttons work for replicas on remote hosts / containers |
-| Dashboard and virtual lab | `public/` | six experiments, quizzes, auto-checked steps |
+| Dashboard (frontend) with live backend terminal | `public/` | cluster view, fault injection, lock client, fencing demo, real log stream |
 | Deployment | `Dockerfile`, `docker-compose.yml`, [DEPLOYMENT.md](DEPLOYMENT.md) | per-replica containers on a private network; AWS VPC/EC2 guide |
 
 Changes made in Phase 2 to the Phase 1 design: the log moved from a rewritten JSON file to an append-only WAL (O(1) per entry instead of O(log size)); leader replication is pipelined (a new entry no longer waits for the next 120 ms heartbeat); the gateway caches the leader instead of probing every node on every request.
