@@ -43,7 +43,9 @@
       <dt>Leader / follower</dt><dd>The leader takes every request. Followers copy it and wait to take over.</dd>
       <dt>Term</dt><dd>The election round number. It goes up each time a new leader is chosen.</dd>
       <dt>Majority (quorum)</dt><dd>3 of 5. A decision only counts if 3 machines agree, so two groups can never both decide.</dd>
+      <dt>Resource name</dt><dd>Just a label for the thing being locked (a database, a file). Any text works. A different name gives a separate lock, so two names never block each other.</dd>
       <dt>Lock and lease</dt><dd>A lock lets one program use something. A lease is a lock with a timer, so it frees itself.</dd>
+      <dt>Client name</dt><dd>Who is asking. Pretend to be two programs by using client-A and client-B for the same resource.</dd>
       <dt>Fencing token</dt><dd>A number that only goes up with each new lock. Storage refuses writes with an old number.</dd>
       <dt>Log / commit</dt><dd>The list of decisions each machine stores. Committed means a majority has saved it.</dd>
     </dl></div>
@@ -89,10 +91,10 @@
         <div class="card-h"><h2 id="h-lock">Lock client <span class="h-sub">ask for a lock</span></h2></div>
         <p class="explain">Pretend to be a program that wants to use a shared thing. A <b>lock</b> stops two programs using it at once. It is rented for a limited time (a <b>lease</b>) and frees itself when the time is up.</p>
         <div class="form">
-          <label>Resource <small>what to lock</small><input id="key" value="orders-db"></label>
-          <label>Client name <small>who is asking</small><input id="owner" value="client-A"></label>
-          <label>Lease (ms) <small>8000 = 8 seconds</small><input id="ttl" type="number" value="8000" min="500"></label>
-          <label>Token <small>auto-filled</small><input id="token" type="number" placeholder="from acquire"></label>
+          <label>Resource <small>name of the thing to lock; any text. Another name = a separate lock</small><input id="key" value="orders-db" title="The name of the thing being locked, for example a database or a file. Any text works. Each name has its own independent lock."></label>
+          <label>Client name <small>who is asking; try client-A, then client-B</small><input id="owner" value="client-A" title="Pretend to be a program. Use different names to play different programs asking for the same lock."></label>
+          <label>Lease (ms) <small>how long you keep it; 8000 = 8 s</small><input id="ttl" type="number" value="8000" min="500"></label>
+          <label>Token <small>filled in by Acquire; needed to Renew or Release</small><input id="token" type="number" placeholder="from acquire"></label>
         </div>
         <div class="btnrow">
           <button id="acq" class="primary" title="Ask for the lock">Acquire</button>
@@ -111,7 +113,7 @@
 
         <h3>Protected resource <span class="help" tabindex="0" data-tip="A storage service that only accepts writes carrying a token at least as new as the newest it has seen.">?</span></h3>
         <div class="form">
-          <label>Value to write <small>any text</small><input id="rvalue" value="data-1"></label>
+          <label>Value to write <small>any text; the data saved to the storage</small><input id="rvalue" value="data-1" title="Only used by this storage demo: the data the client tries to save. It does not affect the locking."></label>
           <div class="form-btn"><button id="rwrite" title="Write using the Resource, Client name and Token from the Lock client card">Write with token</button></div>
         </div>
         <div id="rresult" class="result" role="status" aria-live="polite">&mdash;</div>
