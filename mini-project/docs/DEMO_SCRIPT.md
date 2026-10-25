@@ -10,7 +10,7 @@ npm run fresh
 ```
 
 1. Open http://localhost:8080 in the browser.
-2. Open VS Code on the project folder with `server.js`, `node.js` and `public/app.js` ready in tabs.
+2. Open VS Code on the project folder with `server.js`, `replica.js` and `public/app.js` ready in tabs.
 3. Check the top right says "Leader: N? - 5/5 nodes up (quorum 3)".
 
 ---
@@ -103,7 +103,7 @@ The fix is the fencing token. Each grant gets a number that only goes up. The st
 
 ## Part 3. Backend tour (6 minutes)
 
-**SAY:** "The backend has two programs. `server.js` is the gateway: the front door. `node.js` is one replica of the lock service, and I run five copies of it."
+**SAY:** "The backend has two programs. `server.js` is the gateway: the front door. `replica.js` is one replica of the lock service, and I run five copies of it."
 
 ### 3.1 How a button click reaches the backend
 
@@ -123,9 +123,9 @@ The fix is the fencing token. Each grant gets a number that only goes up. The st
 
 **SAY:** "Notice the gateway keeps no lock data. If it crashed, I could just restart it. All the real state is in the five replicas."
 
-### 3.3 One replica: `node.js`
+### 3.3 One replica: `replica.js`
 
-**DO:** Open `node.js`. Scroll to each section marker.
+**DO:** Open `replica.js`. Scroll to each section marker.
 
 **SAY:** "This file is the heart of the system, under 400 lines with no libraries. It has five parts."
 

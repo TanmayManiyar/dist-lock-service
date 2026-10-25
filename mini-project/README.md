@@ -33,7 +33,7 @@ Windows may ask once whether Node.js may use the network; allow it (it only talk
 
 ## What runs on your machine
 
-`npm start` launches **6 real Node.js processes**: the gateway (`server.js`) and five replicas (`node.js`), one per node.
+`npm start` launches **6 real Node.js processes**: the gateway (`server.js`) and five replicas (`replica.js`), one per node.
 You can see them in Task Manager.
 
 - The replicas talk to each other over real HTTP on localhost (votes, `AppendEntries`, acknowledgements).
@@ -74,13 +74,13 @@ Open this folder in VS Code, then **Terminal > New Terminal** and run `npm run d
 7. **Fencing.** Run the fencing demo: client-A freezes, its lease expires, client-B gets a higher token, and client-A's late write is **REFUSED**.
 8. **Proof.** In a second terminal run `npm test` (all checks pass) and show `docs/BENCHMARKS.md`.
 
-Then walk through the code: `node.js` (Raft + lock state machine), `server.js` (gateway), `public/` (frontend). `docs/STUDY_GUIDE.md` explains every part in plain words and has viva questions.
+Then walk through the code: `replica.js` (Raft + lock state machine), `server.js` (gateway), `public/` (frontend). `docs/STUDY_GUIDE.md` explains every part in plain words and has viva questions.
 
 ## Folder map
 
 | Path | What it is |
 |---|---|
-| `node.js` | One replica: Raft (election, replication, commit), the lock state machine with fencing tokens, disk persistence, structured logging |
+| `replica.js` | One replica: Raft (election, replication, commit), the lock state machine with fencing tokens, disk persistence, structured logging |
 | `server.js` | Gateway: starts the replicas, finds the leader, routes client requests, injects faults, hosts the fenced-resource demo, serves the dashboard, collects the live log |
 | `public/` | The frontend: `index.html`, `app.js`, `style.css`, `ui.css` |
 | `test.js`, `test-chaos.js`, `bench.js` | Smoke test, randomised safety test, benchmarks |

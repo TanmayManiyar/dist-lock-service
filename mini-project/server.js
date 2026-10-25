@@ -33,9 +33,9 @@ let config = { ...DEFAULT_CONFIG };
 function startNode(id) {
   if (isRemote) { call(id, '/admin/start', {}); setTimeout(() => call(id, '/admin/config', config), 700); return; }
   if (procs[id]) return;
-  const p = spawn(process.execPath, [path.join(__dirname, 'node.js'), id, N, DATA], { stdio: 'inherit' });
+  const p = spawn(process.execPath, [path.join(__dirname, 'replica.js'), id, N, DATA], { stdio: 'inherit' });
   procs[id] = p;
-  glog('proc', 'INFO', `spawned replica N${id}: node node.js ${id} ${N} (pid ${p.pid}, port ${BASE_PORT + id})`);
+  glog('proc', 'INFO', `spawned replica N${id}: node replica.js ${id} ${N} (pid ${p.pid}, port ${BASE_PORT + id})`);
   setTimeout(() => { if (procs[id] === p) call(id, '/admin/config', config); }, 700); // re-apply the protocol settings after a restart
   p.on('exit', code => { const planned = procs[id] !== p; if (!planned) delete procs[id]; glog('proc', 'WARN', `replica N${id} process (pid ${p.pid}) ${planned ? 'stopped by the gateway' : 'exited unexpectedly'} (${code === null ? 'killed by signal' : 'exit code ' + code})`); });
 }

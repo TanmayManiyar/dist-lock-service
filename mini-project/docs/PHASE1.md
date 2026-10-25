@@ -55,7 +55,7 @@ flowchart TB
 | Cloud primitive | VM cluster | Hosts one replica per VM, spread across availability zones so a zone loss costs at most 2 of 5 replicas. |
 | Cloud primitive | VPC / security groups | Private subnets; only the gateway port is public, Raft ports are open only between replicas. |
 | Cloud primitive | Block disk | Durable storage for term, vote and log. |
-| Design layer | Raft module (`node.js`) | Leader election (with PreVote), log replication, commit rules, check-quorum, persistence. |
+| Design layer | Raft module (`replica.js`) | Leader election (with PreVote), log replication, commit rules, check-quorum, persistence. |
 | Design layer | Lock state machine | `acquire / renew / release / sweep`, lease expiry, fencing counter. Deterministic: the timestamp is carried inside each command. |
 | Design layer | Gateway (`server.js`) | Finds the leader, follows redirects, retries; hosts fault-injection and the demo fenced resource. |
 | Design layer | Dashboard (`public/`) | Live view of roles, terms, logs, locks and events; fault-injection controls. |
@@ -159,7 +159,7 @@ sequenceDiagram
 
 | Design element | File |
 |---|---|
-| Raft + lock state machine | `node.js` |
+| Raft + lock state machine | `replica.js` |
 | Gateway, leader routing, fault injection, fenced resource | `server.js` |
 | Dashboard | `public/index.html`, `app.js`, `style.css` |
 | Fault-injection test suite (Phase 2 seed) | `test.js` |

@@ -12,11 +12,11 @@ x-replica: &replica
   networks: [lockvpc]
 
 services:
-  node1: { <<: *replica, command: ["node", "node.js", "1", "5", "/data"], volumes: ["n1:/data"] }
-  node2: { <<: *replica, command: ["node", "node.js", "2", "5", "/data"], volumes: ["n2:/data"] }
-  node3: { <<: *replica, command: ["node", "node.js", "3", "5", "/data"], volumes: ["n3:/data"] }
-  node4: { <<: *replica, command: ["node", "node.js", "4", "5", "/data"], volumes: ["n4:/data"] }
-  node5: { <<: *replica, command: ["node", "node.js", "5", "5", "/data"], volumes: ["n5:/data"] }
+  node1: { <<: *replica, command: ["node", "replica.js", "1", "5", "/data"], volumes: ["n1:/data"] }
+  node2: { <<: *replica, command: ["node", "replica.js", "2", "5", "/data"], volumes: ["n2:/data"] }
+  node3: { <<: *replica, command: ["node", "replica.js", "3", "5", "/data"], volumes: ["n3:/data"] }
+  node4: { <<: *replica, command: ["node", "replica.js", "4", "5", "/data"], volumes: ["n4:/data"] }
+  node5: { <<: *replica, command: ["node", "replica.js", "5", "5", "/data"], volumes: ["n5:/data"] }
   gateway:
     build: .
     restart: unless-stopped
