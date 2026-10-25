@@ -252,3 +252,20 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 360px,#fff 100%) fixed}
 .work-area{border-top:5px solid var(--c2);background:linear-gradient(#f0fdfa,#fff 120px)}
 .minibar{background:linear-gradient(90deg,#312e81,#0e7490)}
 #dlNotes{background:linear-gradient(90deg,#4f46e5,#7c3aed);border-color:#4f46e5}
+
+/* ---------- simulation tab: steps left (1/4, own scrollbar), live system right (fits the screen) ---------- */
+@media (min-width:900px) and (min-height:480px){
+  body.sim-on .exp-head,body.sim-on .foot{display:none}
+  body.sim-on .wrap{max-width:none;padding:6px 16px 8px}
+  body.sim-on .tabs{margin:6px -4px 10px}
+  #p-Simulation .pager{display:none}
+  .sim{display:grid;grid-template-columns:minmax(300px,25%) minmax(0,1fr);gap:14px;height:calc(100vh - 150px);min-height:440px}
+  .steps-area{overflow-y:auto;min-height:0;height:100%;padding:14px}
+  .sa-body{grid-template-columns:1fr}
+  .sa-head{align-items:flex-start}
+  .work-area{display:flex;flex-direction:column;min-height:0;height:100%;padding:10px 12px}
+  .work-area .explain{display:none}
+  .sim iframe{flex:1;min-height:0;height:100%}
+  .minibar{display:none!important}
+  #toWork{display:none}
+}

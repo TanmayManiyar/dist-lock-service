@@ -31,13 +31,22 @@
       <span class="g-sub">What is this? A lock service that runs on 5 machines. A <b>lock</b> lets only ONE program at a time use something shared, and the 5 machines keep working together even when some of them fail.</span>
     </summary>
     <ol class="walk">
-      <li><span class="wn">1</span><div><b>Look at the cluster</b><p>The 5 circles are the 5 machines. The gold one is the <b>leader</b>: it handles every request. The blue ones are <b>followers</b> that keep copies.</p><button class="sm" data-go="cluster">Show me</button></div></li>
-      <li><span class="wn">2</span><div><b>Take a lock</b><p>A program asks for the lock called <code>orders-db</code>. It is granted for 8 seconds and given a number called a <b>token</b>.</p><button class="sm primary" id="w-acq">Acquire it for me</button></div></li>
-      <li><span class="wn">3</span><div><b>Ask again as someone else</b><p>While client-A holds it, client-B asks for the same lock and is <b>refused</b>. Only one holder at a time.</p><button class="sm" id="w-other">Try as client-B</button></div></li>
-      <li><span class="wn">4</span><div><b>Crash the leader</b><p>Watch the ring: the 4 other machines elect a new leader in about a second, and your lock is still there.</p><button class="sm warn" id="w-crash">Crash the leader</button></div></li>
-      <li><span class="wn">5</span><div><b>Cut the network</b><p>Disconnect the leader from the rest. Only the group with 3 or more machines can keep working. Then reconnect.</p><button class="sm" id="w-iso">Isolate the leader</button> <button class="sm good" id="w-heal">Reconnect</button></div></li>
-      <li><span class="wn">6</span><div><b>Protect the data</b><p>A slow program can wake up and write with an expired lock. A <b>fencing token</b> lets the storage refuse it. See it happen.</p><button class="sm" id="w-fence">Run the fencing demo</button></div></li>
+      <li><span class="wn">1</span><div><b>Look at the cluster</b><p>The 5 circles are the 5 machines. The gold one is the <b>leader</b>: it handles every request. The blue ones are <b>followers</b> that keep copies.</p><span class="why">Why it matters: 5 copies means no single machine can take the service down.</span><button class="sm" data-go="cluster">Show me</button></div></li>
+      <li><span class="wn">2</span><div><b>Take a lock</b><p>A program asks for the lock called <code>orders-db</code>. It is granted for 8 seconds and given a number called a <b>token</b>.</p><span class="why">Why it matters: the service promises ONE holder at a time (mutual exclusion).</span><button class="sm primary" id="w-acq">Acquire it for me</button></div></li>
+      <li><span class="wn">3</span><div><b>Ask again as someone else</b><p>While client-A holds it, client-B asks for the same lock and is <b>refused</b>. Only one holder at a time.</p><span class="why">Why it matters: this refusal is the proof that two programs can never hold the same lock.</span><button class="sm" id="w-other">Try as client-B</button></div></li>
+      <li><span class="wn">4</span><div><b>Crash the leader</b><p>Watch the ring: the 4 other machines elect a new leader in about a second, and your lock is still there.</p><span class="why">Why it matters: fault tolerance. The lock was saved on at least 3 machines, so a new leader still knows about it.</span><button class="sm warn" id="w-crash">Crash the leader</button></div></li>
+      <li><span class="wn">5</span><div><b>Cut the network</b><p>Disconnect the leader from the rest. Only the group with 3 or more machines can keep working. Then reconnect.</p><span class="why">Why it matters: the majority rule. Only the side with 3+ machines can act, so there are never two leaders (no split brain).</span><button class="sm" id="w-iso">Isolate the leader</button> <button class="sm good" id="w-heal">Reconnect</button></div></li>
+      <li><span class="wn">6</span><div><b>Protect the data</b><p>A slow program can wake up and write with an expired lock. A <b>fencing token</b> lets the storage refuse it. See it happen.</p><span class="why">Why it matters: a lease alone is not enough. Tokens make a late, stale write harmless.</span><button class="sm" id="w-fence">Run the fencing demo</button></div></li>
     </ol>
+    <div class="gloss"><h3>Words you will see</h3><dl>
+      <dt>Machine / node</dt><dd>One of the 5 servers. Each keeps a full copy of the lock table.</dd>
+      <dt>Leader / follower</dt><dd>The leader takes every request. Followers copy it and wait to take over.</dd>
+      <dt>Term</dt><dd>The election round number. It goes up each time a new leader is chosen.</dd>
+      <dt>Majority (quorum)</dt><dd>3 of 5. A decision only counts if 3 machines agree, so two groups can never both decide.</dd>
+      <dt>Lock and lease</dt><dd>A lock lets one program use something. A lease is a lock with a timer, so it frees itself.</dd>
+      <dt>Fencing token</dt><dd>A number that only goes up with each new lock. Storage refuses writes with an old number.</dd>
+      <dt>Log / commit</dt><dd>The list of decisions each machine stores. Committed means a majority has saved it.</dd>
+    </dl></div>
     <div class="guide-foot">Made a mess? <button id="w-reset" class="sm warn">&#8635; Reset simulation</button> puts everything back to a fresh, healthy cluster.</div>
   </details>
 
@@ -57,9 +66,10 @@
           </div>
         </div>
         <p class="explain">These 5 machines agree on every lock decision by voting. The service keeps working as long as <b>3 or more</b> machines can talk to each other.</p>
-        <div class="story" id="story" role="status" aria-live="polite">Starting up&hellip;</div>
+        <div class="cl-body">
         <svg id="ring" viewBox="0 0 400 310" role="img" aria-label="The five machines and their roles"></svg>
-
+          <div class="cl-side">
+        <div class="story" id="story" role="status" aria-live="polite">Starting up&hellip;</div>
         <div class="fault">
           <h3>Break things <span class="help" tabindex="0" data-tip="Cause failures on purpose and watch how the service copes.">?</span></h3>
           <div class="fault-row"><span class="fl">Crash:</span>
@@ -70,9 +80,9 @@
             <button id="splitMajority" class="sm" title="Split the machines into a group of 3 and a group of 2">Split 3 | 2</button>
             <button id="healBtn" class="good sm" title="Reconnect all machines">Heal network (reconnect)</button></div>
         </div>
-
-        <h3>Details of each machine <span class="help" tabindex="0" data-tip="Role: its job right now. Term: the election round number; it goes up every time a new leader is elected. Log: how many operations it has stored. Commit: how many of those are confirmed by a majority. Cut off from: machines it cannot reach.">?</span></h3>
-        <table id="nodeTable"><thead><tr><th>Node</th><th>Role</th><th>Term</th><th>Log</th><th>Commit</th><th>Cut off from</th></tr></thead><tbody></tbody></table>
+            <details class="more"><summary>Details of each machine <span class="help" tabindex="0" data-tip="Role: its job right now. Term: the election round number; it goes up every time a new leader is elected. Log: how many operations it has stored. Commit: how many of those are confirmed by a majority. Cut off from: machines it cannot reach.">?</span></summary><table id="nodeTable"><thead><tr><th>Node</th><th>Role</th><th>Term</th><th>Log</th><th>Commit</th><th>Cut off from</th></tr></thead><tbody></tbody></table></details>
+          </div>
+        </div>
       </section>
 
       <section class="card c-log" id="card-log" data-card="log" aria-labelledby="h-log">

@@ -13,6 +13,10 @@ if (only.length) {
   document.querySelectorAll('[data-card]').forEach(c => { c.hidden = !only.includes(c.dataset.card); });
   if (only.length <= 2) document.documentElement.classList.add('stack');
 }
+// inside the lab the steps refer to the node table, so keep it open
+if (qs.has('embed')) document.querySelectorAll('.more').forEach(d => { d.open = true; });
+// fit-to-screen layout: the cluster gets a full-width row, every other visible card gets a column under it
+document.documentElement.style.setProperty('--cols', Math.max(1, document.querySelectorAll('[data-card]:not([hidden]):not([data-card=cluster])').length));
 // lab: highlight the cards the current step needs
 window.setFocus = list => document.querySelectorAll('[data-card]').forEach(c => c.classList.toggle('focus', (list || []).includes(c.dataset.card)));
 
