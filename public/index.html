@@ -124,6 +124,32 @@
         <ol id="fenceSteps" class="steps"></ol>
       </section>
 
+      <section class="card c-term" id="card-term" data-card="term" aria-labelledby="h-term">
+        <div class="card-h"><h2 id="h-term">Live backend terminal <span class="h-sub">real logs, not a simulation</span></h2><span class="crumb" id="termStat">connecting&hellip;</span></div>
+        <p class="explain">Every line here is printed by the real running processes: the <b>gateway</b> (<code>server.js</code>) and the <b>5 replica processes</b> (<code>node.js</code>). It is the same output the terminal that started the server shows. Press Acquire, Kill a machine or cut the network above and watch what the backend actually does.</p>
+        <div class="term">
+          <div class="term-bar"><i class="td r"></i><i class="td y"></i><i class="td g"></i><span class="term-title">lock-service &mdash; live backend log (gateway + N1&hellip;N5)</span></div>
+          <div class="term-tools">
+            <span class="chips" id="termChips">
+              <button type="button" class="on" data-src="all">All</button>
+              <button type="button" data-src="req" title="HTTP requests reaching the gateway and how it routes them to the leader">Requests</button>
+              <button type="button" data-src="raft" title="Elections, heartbeats, log replication and commits">Raft</button>
+              <button type="button" data-src="lock" title="Lock decisions applied by every replica, plus the fencing check at the protected resource">Locks</button>
+              <button type="button" data-src="disk" title="Writes to the write-ahead log and term file; recovery on start">Disk</button>
+              <button type="button" data-src="fault" title="Crashes, restarts, partitions and process events">Faults</button>
+            </span>
+            <select id="termNode" aria-label="Show lines from"><option value="all">All nodes</option><option value="GW">Gateway</option><option>N1</option><option>N2</option><option>N3</option><option>N4</option><option>N5</option></select>
+            <label class="tchk"><input type="checkbox" id="termDebug" checked> details</label>
+            <label class="tchk" title="Record and show every 120 ms heartbeat (very chatty)"><input type="checkbox" id="termBeat"> heartbeats</label>
+            <span class="tspace"></span>
+            <button type="button" id="termPause">Pause</button>
+            <button type="button" id="termClear">Clear</button>
+            <button type="button" id="termDl" title="Save the log as a text file">Download</button>
+          </div>
+          <div class="term-body" id="termBody" tabindex="0" role="log" aria-label="Live backend log"></div>
+          <div class="term-foot"><span class="prompt">$ tail -f cluster.log <i class="cursor"></i></span><span id="termCount"></span></div>
+        </div>
+      </section>
       <section class="card c-log" id="card-log" data-card="log" aria-labelledby="h-log">
         <div class="card-h"><h2 id="h-log">Event log <span class="h-sub">what happened</span></h2><span class="crumb">Newest at the bottom, scroll for older</span></div>
         <p class="explain">A live diary of what the machines did and what you asked for. Red lines are failures, gold lines are elections.</p>

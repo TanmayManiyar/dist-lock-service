@@ -13,6 +13,12 @@ npm run fresh      # start gateway + 5 replicas with clean data (npm start keeps
 npm test           # in a second terminal: crash / partition / failover checks
 ```
 
+## Live backend terminal
+
+The dashboard has a terminal window (card 4) that streams the real log of the running system: the gateway (`server.js`) and each of the 5 replica processes (`node.js`). Nothing in it is simulated. Every replica writes the same lines to its own stdout (so they also appear in the terminal that started the server) and serves them at `GET /logs`; the gateway merges them in time order and serves them at `GET /api/term?since=<seq>`.
+
+It shows requests and leader routing, elections and votes, log replication (`AppendEntries`), `COMMIT` on a majority, the lock decision every replica applies (`GRANTED` / `REFUSED` / `RENEWED` / `RELEASED` / `EXPIRED`), write-ahead-log and term-file writes, fencing checks at the protected resource, and crashes, restarts and partitions. Filter by area or node, turn on per-heartbeat lines, pause, clear, or download the log as a text file. The static virtual lab (`vlab/`) has no backend, so it does not show the terminal.
+
 ## What you can do in the dashboard
 
 - Watch roles, terms and log indexes of the 5 replicas live.
