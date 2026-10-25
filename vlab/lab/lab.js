@@ -113,6 +113,7 @@ function buildExperiment(EXP) {
     tabs.querySelectorAll('.tab').forEach(t => { const on = t.dataset.t === n; t.classList.toggle('active', on); t.setAttribute('aria-selected', on); });
     panes.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'p-' + n));
     store.set(EXP.id + '.tab', n);
+    document.body.classList.toggle('sim-on', n === 'Simulation');
     if (n === 'Simulation') startSim(); else stopSim();
     history.replaceState(null, '', '#' + n);
     marks();
@@ -177,7 +178,7 @@ function buildExperiment(EXP) {
           <span class="live" id="live">connecting...</span>
         </div>
         <p class="explain">This is where you do the step above. Cards with a blue outline are the ones the current step uses. Hover over the <b>?</b> icons for explanations.</p>
-        <iframe id="dash" title="Lock service dashboard" scrolling="no"></iframe>
+        <iframe id="dash" title="Lock service dashboard"></iframe>
       </section>
     </div>
     <div class="minibar" id="miniBar" hidden><div class="mb-text"><b id="mbStep"></b><span id="mbChk"></span></div><button class="sm primary" id="mbUp">&uarr; Steps</button><button class="sm warn" id="mbReset">&#8635; Reset</button></div>`;
@@ -198,13 +199,7 @@ function buildExperiment(EXP) {
     simOn = true;
     const f = $('#dash');
     if (!f.src) {
-      f.onload = () => { // size the embedded dashboard to its content so the page has one scrollbar, not two
-        try {
-          const d = f.contentDocument, fit = () => { f.style.height = Math.max(420, d.documentElement.scrollHeight) + 'px'; };
-          fit(); if (ro) ro.disconnect(); ro = new ResizeObserver(fit); ro.observe(d.body);
-        } catch {}
-        applyFocus();
-      };
+      f.onload = applyFocus; // the iframe fills the working area; the dashboard inside fits itself, so nothing scrolls
       f.src = '/?embed=1&show=' + panels.join(',');
     }
     $('#obs').value = store.get(EXP.id + '.obs', '');
