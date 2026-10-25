@@ -2,3 +2,6 @@ data/
 results/
 *.log
 node_modules/
+
+# Office temp/lock files
+~$*
