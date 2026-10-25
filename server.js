@@ -18,20 +18,52 @@ if (process.argv.includes('--fresh')) fs.rmSync(DATA, { recursive: true, force: 
 fs.mkdirSync(DATA, { recursive: true });
 
 const procs = {};
-const DEFAULT_CONFIG = { prevote: true, checkQuorum: true, electionMin: 600, electionMax: 1100, fencing: true };
+
+// ---------- live terminal: the gateway's own log lines + every replica's real log lines, merged in time order ----------
+const term = []; let termSeq = 0;
+const pad = (n, w = 2) => String(n).padStart(w, '0');
+function glog(src, lvl, msg) {
+  const ts = Date.now();
+  term.push({ seq: ++termSeq, ts, node: 'GW', src, lvl, msg }); if (term.length > 2500) term.splice(0, term.length - 2500);
+  const d = new Date(ts);
+  console.log(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)} GW ${src.padEnd(5)} ${lvl.padEnd(5)} ${msg}`);
+}
+const DEFAULT_CONFIG = { prevote: true, checkQuorum: true, electionMin: 600, electionMax: 1100, fencing: true, trace: false };
 let config = { ...DEFAULT_CONFIG };
 function startNode(id) {
   if (isRemote) { call(id, '/admin/start', {}); setTimeout(() => call(id, '/admin/config', config), 700); return; }
   if (procs[id]) return;
   const p = spawn(process.execPath, [path.join(__dirname, 'node.js'), id, N, DATA], { stdio: 'inherit' });
   procs[id] = p;
+  glog('proc', 'INFO', `spawned replica N${id}: node node.js ${id} ${N} (pid ${p.pid}, port ${BASE_PORT + id})`);
   setTimeout(() => { if (procs[id] === p) call(id, '/admin/config', config); }, 700); // re-apply lab toggles after a restart
-  p.on('exit', () => { if (procs[id] === p) delete procs[id]; });
+  p.on('exit', code => { const planned = procs[id] !== p; if (!planned) delete procs[id]; glog('proc', 'WARN', `replica N${id} process (pid ${p.pid}) ${planned ? 'stopped by the gateway' : 'exited unexpectedly'} (${code === null ? 'killed by signal' : 'exit code ' + code})`); });
 }
 function stopNode(id) { if (isRemote) { call(id, '/admin/crash', {}); return; } const p = procs[id]; if (p) { delete procs[id]; p.kill(); } }
 if (!isRemote) for (let i = 1; i <= N; i++) startNode(i);
 process.on('exit', () => Object.keys(procs).forEach(stopNode));
 ['SIGINT', 'SIGTERM'].forEach(s => process.on(s, () => process.exit(0)));
+
+const cursors = {};   // replica id -> { epoch, seq }
+let polling = false;
+async function pollLogs() {
+  if (polling) return; polling = true;
+  try {
+    const batch = [];
+    await Promise.all([...Array(N).keys()].map(async i => {
+      const id = i + 1, c = cursors[id] || (cursors[id] = { epoch: null, seq: 0 });
+      let r = await call(id, `/logs?since=${c.seq}`);
+      if (!r || !r.lines) return;
+      if (r.epoch !== c.epoch) { c.epoch = r.epoch; c.seq = 0; r = await call(id, '/logs?since=0'); if (!r || !r.lines) return; } // process restarted
+      c.seq = r.seq;
+      for (const l of r.lines) batch.push({ ts: l.ts, node: 'N' + l.node, src: l.src, lvl: l.lvl, msg: l.msg });
+    }));
+    batch.sort((a, b) => a.ts - b.ts);
+    for (const l of batch) term.push({ seq: ++termSeq, ...l });
+    if (term.length > 2500) term.splice(0, term.length - 2500);
+  } finally { polling = false; }
+}
+setInterval(pollLogs, 250);
 
 let partition = null; // array of groups, or null when healed
 const actionLog = [];
@@ -68,8 +100,9 @@ async function viaLeader(route, body, retry = false) {
     const id = hint || leaderCache || currentLeader(await statuses());
     hint = null; leaderCache = null;
     if (id) {
+      if (route !== '/client/locks') glog('route', 'DEBUG', `forward ${route} -> N${id}${attempt ? ' (retry ' + attempt + ')' : ''}`); // the dashboard polls the lock table twice a second; that is not logged
       const r = await call(id, route, body);
-      if (r && r.error === 'not-leader') hint = r.leader || null;
+      if (r && r.error === 'not-leader') { hint = r.leader || null; glog('route', 'DEBUG', `N${id} says not-leader${hint ? ', redirect hint N' + hint : ''}`); }
       else if (r) {
         const stale = r.error === 'leadership-lost' || r.error === 'timeout';
         if (stale && retry && attempt < 4) continue;   // idempotent op: re-probe, the cached leader may be cut off
@@ -77,8 +110,10 @@ async function viaLeader(route, body, retry = false) {
         return { ...r, servedBy: id };
       }
     }
+    else glog('route', 'WARN', 'no leader known yet; waiting 250ms and probing every replica again');
     await new Promise(r => setTimeout(r, 250));
   }
+  glog('route', 'WARN', `${route}: no leader found after 5 attempts`);
   return { ok: false, error: 'no-leader' };
 }
 
@@ -100,6 +135,7 @@ const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'applic
 const readBody = req => new Promise(r => { let s = ''; req.on('data', c => s += c); req.on('end', () => { try { r(JSON.parse(s || '{}')); } catch { r({}); } }); });
 
 const AUTH = process.env.BASIC_AUTH ? 'Basic ' + Buffer.from(process.env.BASIC_AUTH).toString('base64') : null;
+glog('boot', 'INFO', `gateway starting on :${PORT}, cluster of ${N} replicas${isRemote ? ' (remote hosts)' : ' (local processes)'}, data dir ${DATA}`);
 http.createServer(async (req, res) => {
   if (AUTH && req.headers.authorization !== AUTH) { res.writeHead(401, { 'www-authenticate': 'Basic realm="lock-service"' }); return res.end('authentication required'); }
   const url = req.url.split('?')[0];
@@ -112,13 +148,20 @@ http.createServer(async (req, res) => {
     nodes.forEach(n => delete n.events);
     return json(res, 200, { nodes, leader, partition, events, clientEvents: actionLog, n: N });
   }
+  if (url === '/api/term') {
+    const since = +new URL(req.url, 'http://x').searchParams.get('since') || 0;
+    const lines = since ? term.filter(l => l.seq > since) : term.slice(-300);
+    return json(res, 200, { ok: true, seq: termSeq, lines: lines.slice(-600) });
+  }
   if (url === '/api/locks') {
     const r = await viaLeader('/client/locks');
     return json(res, 200, r);
   }
   if (['/api/acquire', '/api/renew', '/api/release'].includes(url)) {
-    const op = url.slice(5);
+    const op = url.slice(5), t0 = Date.now();
+    glog('http', 'INFO', `POST ${url} key=${body.key} owner=${body.owner}${body.ttlMs ? ' ttl=' + body.ttlMs + 'ms' : ''}${body.token ? ' token=' + body.token : ''}`);
     const r = await viaLeader('/client/' + op, body, op !== 'release');
+    glog('http', r.ok ? 'INFO' : (r.error === 'held' || r.error === 'not-holder' ? 'INFO' : 'WARN'), `-> ${r.ok ? '200 OK' + (r.token ? ' token=' + r.token : '') : 'FAILED ' + r.error + (r.holder ? ' (held by ' + r.holder + ')' : '')} served by ${r.servedBy ? 'N' + r.servedBy : 'nobody'} in ${Date.now() - t0}ms`);
     logAction(`${body.owner} ${op} "${body.key}" -> ${r.ok ? 'OK' + (r.token ? ' token ' + r.token : '') : r.error + (r.holder ? ' (held by ' + r.holder + ')' : '')}`);
     return json(res, 200, r);
   }
@@ -127,10 +170,12 @@ http.createServer(async (req, res) => {
     const cur = resource[key] || { maxToken: 0 };
     if (config.fencing && token < cur.maxToken) {
       logAction(`RESOURCE rejected stale write to "${key}" from ${owner} (token ${token} < ${cur.maxToken})`);
+      glog('fence', 'WARN', `RESOURCE write key=${key} owner=${owner} token=${token} -> REJECTED: stale token (resource has already seen token ${cur.maxToken})`);
       return json(res, 200, { ok: false, error: 'stale-token', maxToken: cur.maxToken });
     }
     resource[key] = { maxToken: Math.max(cur.maxToken, token), lastToken: token, value, writer: owner };
     logAction(`RESOURCE accepted write to "${key}" from ${owner} (token ${token})${config.fencing ? '' : ' [fencing OFF]'}`);
+    glog('fence', 'INFO', `RESOURCE write key=${key} owner=${owner} token=${token} value=${JSON.stringify(value)} -> ACCEPTED${config.fencing ? '' : ' (fencing check is OFF)'}; highest token seen is now ${Math.max(cur.maxToken, token)}`);
     return json(res, 200, { ok: true });
   }
   if (url === '/api/resource') return json(res, 200, resource);
@@ -139,6 +184,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST') {
       config = { ...config, ...body };
       await Promise.all([...Array(N).keys()].map(i => call(i + 1, '/admin/config', config)));
+      glog('fault', 'INFO', `config changed: ${JSON.stringify(body)} (pushed to all replicas)`);
       logAction(`CONFIG: prevote=${config.prevote} checkQuorum=${config.checkQuorum} election=${config.electionMin}-${config.electionMax}ms`);
     }
     return json(res, 200, config);
@@ -155,6 +201,7 @@ http.createServer(async (req, res) => {
     partition = null; config = { ...DEFAULT_CONFIG };
     for (const k of Object.keys(resource)) delete resource[k];
     actionLog.length = 0; logAction('LAB: cluster reset to a clean state');
+    glog('fault', 'WARN', 'RESET: all replicas stopped, data directory wiped, fresh cluster starting');
     if (!isRemote) for (let i = 1; i <= N; i++) startNode(i);
     return json(res, 200, { ok: true });
   }
@@ -171,12 +218,13 @@ http.createServer(async (req, res) => {
       startNode(body.id);
     }
     logAction(`FAULT: wiped disk of node ${body.id} and restarted it`);
+    glog('fault', 'WARN', `FAULT: wiped the disk (WAL + term file) of N${body.id} and restarted it`);
     return json(res, 200, { ok: true });
   }
-  if (url === '/api/fault/kill') { stopNode(body.id); logAction(`FAULT: killed node ${body.id}`); return json(res, 200, { ok: true }); }
-  if (url === '/api/fault/restart') { startNode(body.id); logAction(`FAULT: restarted node ${body.id}`); return json(res, 200, { ok: true }); }
-  if (url === '/api/fault/partition') { await applyPartition(body.groups); logAction(`FAULT: partition ${JSON.stringify(body.groups)}`); return json(res, 200, { ok: true }); }
-  if (url === '/api/fault/heal') { await applyPartition(null); logAction('FAULT: network healed'); return json(res, 200, { ok: true }); }
+  if (url === '/api/fault/kill') { glog('fault', 'WARN', `FAULT: killing replica N${body.id} (SIGTERM to its process)`); stopNode(body.id); logAction(`FAULT: killed node ${body.id}`); return json(res, 200, { ok: true }); }
+  if (url === '/api/fault/restart') { glog('fault', 'INFO', `FAULT: restarting replica N${body.id}`); startNode(body.id); logAction(`FAULT: restarted node ${body.id}`); return json(res, 200, { ok: true }); }
+  if (url === '/api/fault/partition') { glog('fault', 'WARN', `FAULT: network partition ${JSON.stringify(body.groups)}: replicas in different groups can no longer talk`); await applyPartition(body.groups); logAction(`FAULT: partition ${JSON.stringify(body.groups)}`); return json(res, 200, { ok: true }); }
+  if (url === '/api/fault/heal') { glog('fault', 'INFO', 'FAULT: network healed, all replicas can talk again'); await applyPartition(null); logAction('FAULT: network healed'); return json(res, 200, { ok: true }); }
 
   const file = path.join(PUBLIC, url === '/' ? 'index.html' : url.endsWith('/') ? url + 'index.html' : url);
   if (file.startsWith(PUBLIC) && fs.existsSync(file) && fs.statSync(file).isFile()) {
