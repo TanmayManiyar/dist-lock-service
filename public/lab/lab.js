@@ -168,7 +168,7 @@ function buildExperiment(EXP) {
         <div class="toolbox">
           <details class="fold" id="foldSet"><summary>Protocol settings <span class="help" tabindex="0" data-tip="Switches that turn safety features on or off. Some steps ask you to change them to see what each one protects against.">?</span></summary><div id="toggles"></div></details>
           ${EXP.tools ? '<details class="fold" id="foldTools"><summary>Extra tools</summary><div id="tools"></div></details>' : ''}
-          <details class="fold" id="foldObs"><summary>My notes</summary><textarea id="obs" placeholder="Write what you predicted and what actually happened..."></textarea></details>
+          <details class="fold" id="foldObs"><summary>My notes</summary><textarea id="obs" placeholder="Write what you predicted and what actually happened..."></textarea><div class="row"><button class="sm primary" id="dlNotes">Download notes (.txt)</button><span class="crumb" id="dlMsg">Notes are saved in this browser as you type.</span></div></details>
         </div>
       </section>
       <section class="work-area" id="workArea" aria-label="Working area">
@@ -209,6 +209,16 @@ function buildExperiment(EXP) {
     }
     $('#obs').value = store.get(EXP.id + '.obs', '');
     $('#obs').oninput = e => store.set(EXP.id + '.obs', e.target.value);
+    $('#dlNotes').onclick = () => {
+      const txt = $('#obs').value.trim();
+      if (!txt) { $('#dlMsg').textContent = 'Write something first, then download.'; return; }
+      const head = `${EXP.title}\nDate: ${new Date().toLocaleString()}\nSteps completed: ${done.length}/${EXP.steps.length}\n${'-'.repeat(40)}\n\n`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([head + txt + '\n'], { type: 'text/plain' }));
+      a.download = `${EXP.id}-notes.txt`; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      $('#dlMsg').textContent = 'Downloaded ' + a.download;
+    };
     $('#reset').onclick = resetSim;
     $('#mbReset').onclick = resetSim;
     $('#mbUp').onclick = () => $('#stepsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
