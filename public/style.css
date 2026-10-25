@@ -101,3 +101,62 @@ label small{display:block;font-weight:400;color:var(--faint);font-size:11.5px;ma
 .embed.stack main{grid-template-columns:minmax(0,1fr)}
 .embed.stack .col{display:contents}
 .embed.stack .c-cluster{order:1}.embed.stack .c-lock{order:2}.embed.stack .c-fence{order:3}.embed.stack .c-log{order:4}
+
+/* ---------- colour theme (dashboard) ---------- */
+:root{--c1:#4f46e5;--c2:#0d9488;--c3:#b45309;--c4:#e11d48;--c5:#7c3aed;--c6:#0284c7}
+body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 380px,#fff 100%) fixed}
+.topbar{background:linear-gradient(100deg,#312e81,#4338ca 45%,#0e7490);border-bottom:0;box-shadow:0 2px 10px rgba(49,46,129,.35)}
+.topbar .brand h1{color:#fff}
+.topbar .sub{color:#c7d2fe}
+.topbar .logo{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}
+.topbar button#resetAll{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.45);color:#fff}
+.topbar button#resetAll:hover{background:#fff;color:#9f1239}
+.navhint{color:#fde68a}
+
+/* Virtual Lab button: glowing, with a ring of light running around its border */
+@property --ring{syntax:"<angle>";initial-value:0deg;inherits:false}
+@keyframes ringspin{to{--ring:360deg}}
+@keyframes glowpulse{0%,100%{opacity:.55}50%{opacity:.95}}
+.navlab{position:relative;isolation:isolate;border:0;border-radius:11px;padding:9px 18px;background:#fff;color:#3730a3;font-weight:800;letter-spacing:.01em}
+.navlab::before,.navlab::after{content:"";position:absolute;inset:-3px;border-radius:14px;z-index:-2;
+  background:conic-gradient(from var(--ring),#22d3ee,#6366f1,#ec4899,#facc15,#22d3ee);animation:ringspin 2.4s linear infinite}
+.navlab::after{filter:blur(9px);z-index:-3;animation:ringspin 2.4s linear infinite,glowpulse 1.8s ease-in-out infinite}
+.navlab>*{position:relative}
+.navlab{box-shadow:inset 0 0 0 0 transparent}
+.navlab:hover{background:#fef9c3;color:#312e81}
+@supports not (background:conic-gradient(from 1turn,red,blue)){.navlab{border:2px solid #facc15}.navlab::before,.navlab::after{display:none}}
+@media (prefers-reduced-motion:reduce){.navlab::before,.navlab::after{animation:none!important}}
+
+/* guide */
+.guide{background:linear-gradient(135deg,#eef2ff,#fdf4ff 60%,#fff);border-color:#a5b4fc}
+.g-badge{background:linear-gradient(90deg,#4f46e5,#db2777)}
+.g-title{color:#312e81}
+.walk li:nth-child(6n+1){border-top:4px solid var(--c1)}.walk li:nth-child(6n+2){border-top:4px solid var(--c2)}
+.walk li:nth-child(6n+3){border-top:4px solid var(--c3)}.walk li:nth-child(6n+4){border-top:4px solid var(--c4)}
+.walk li:nth-child(6n+5){border-top:4px solid var(--c5)}.walk li:nth-child(6n+6){border-top:4px solid var(--c6)}
+.walk li:nth-child(6n+1) .wn{background:var(--c1)}.walk li:nth-child(6n+2) .wn{background:var(--c2)}
+.walk li:nth-child(6n+3) .wn{background:var(--c3)}.walk li:nth-child(6n+4) .wn{background:var(--c4)}
+.walk li:nth-child(6n+5) .wn{background:var(--c5)}.walk li:nth-child(6n+6) .wn{background:var(--c6)}
+.area-title h2{border-left:5px solid var(--c2);padding-left:12px}
+
+/* cards: one colour each */
+.c-cluster{border-top:5px solid var(--c1);background:linear-gradient(#eef2ff,#fff 110px)}
+.c-log{border-top:5px solid #475569;background:linear-gradient(#f1f5f9,#fff 90px)}
+.c-lock{border-top:5px solid var(--c2);background:linear-gradient(#f0fdfa,#fff 110px)}
+.c-fence{border-top:5px solid var(--c5);background:linear-gradient(#f5f3ff,#fff 110px)}
+.c-cluster h2{color:#3730a3}.c-lock h2{color:#115e59}.c-fence h2{color:#5b21b6}.c-log h2{color:#334155}
+.fault{background:#fff7ed;border-color:#fdba74}
+.fault h3{color:#9a3412}
+.story{background:#eef2ff;border-color:#c7d2fe}
+.story::before{background:var(--c1)}
+button.primary{background:linear-gradient(90deg,#4f46e5,#7c3aed);border-color:#4f46e5}
+button.primary:hover:not(:disabled){background:linear-gradient(90deg,#4338ca,#6d28d9);border-color:#4338ca}
+.c-lock button.primary{background:linear-gradient(90deg,#0d9488,#0891b2);border-color:#0d9488}
+.c-lock button.primary:hover:not(:disabled){background:linear-gradient(90deg,#0f766e,#0e7490);border-color:#0f766e}
+th{background:#eef2ff;color:#3730a3}
+.c-lock th{background:#ccfbf1;color:#115e59}.c-fence th{background:#ede9fe;color:#5b21b6}
+.bar>i{background:linear-gradient(90deg,#10b981,#06b6d4)}
+.log{background:#0f172a;border-color:#1e293b}
+.ev{color:#94a3b8}.ev:hover{background:#1e293b}
+.ev time{color:#64748b}.ev .who{color:#e2e8f0}
+.ev.fault,.ev.fault .who{color:#fda4af}.ev.lead,.ev.lead .who{color:#fcd34d}.ev.ok{color:#6ee7b7}
