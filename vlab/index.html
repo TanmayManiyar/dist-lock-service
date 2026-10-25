@@ -50,11 +50,8 @@
     <div class="guide-foot">Made a mess? <button id="w-reset" class="sm warn">&#8635; Reset simulation</button> puts everything back to a fresh, healthy cluster.</div>
   </details>
 
-  <!-- STEP 2: working area -->
-  <div class="area-title"><h2>Working area</h2><span class="crumb">The live system. Everything you do here is real: crash machines, take locks, watch what happens.</span></div>
-
   <main>
-    <div class="col">
+    <div class="col col-a">
       <section class="card c-cluster" id="card-cluster" data-card="cluster" aria-labelledby="h-cluster">
         <div class="card-h">
           <h2 id="h-cluster">Cluster <span class="h-sub">the 5 machines</span></h2>
@@ -85,22 +82,17 @@
         </div>
       </section>
 
-      <section class="card c-log" id="card-log" data-card="log" aria-labelledby="h-log">
-        <div class="card-h"><h2 id="h-log">Event log <span class="h-sub">what happened</span></h2><span class="crumb">Newest at the bottom</span></div>
-        <p class="explain">A live diary of what the machines did and what you asked for. Red lines are failures, gold lines are elections.</p>
-        <div id="log" class="log"></div>
-      </section>
     </div>
 
-    <div class="col">
+    <div class="col col-b">
       <section class="card c-lock" id="card-lock" data-card="lock" aria-labelledby="h-lock">
         <div class="card-h"><h2 id="h-lock">Lock client <span class="h-sub">ask for a lock</span></h2></div>
         <p class="explain">Pretend to be a program that wants to use a shared thing. A <b>lock</b> stops two programs using it at once. It is rented for a limited time (a <b>lease</b>) and frees itself when the time is up.</p>
         <div class="form">
-          <label>Resource <small>what to lock (any name)</small><input id="key" value="orders-db"></label>
+          <label>Resource <small>what to lock</small><input id="key" value="orders-db"></label>
           <label>Client name <small>who is asking</small><input id="owner" value="client-A"></label>
-          <label>Lease in ms <small>how long to hold it (8000 = 8 s)</small><input id="ttl" type="number" value="8000" min="500"></label>
-          <label>Token <small>filled in automatically; needed to renew or release</small><input id="token" type="number" placeholder="from acquire"></label>
+          <label>Lease (ms) <small>8000 = 8 seconds</small><input id="ttl" type="number" value="8000" min="500"></label>
+          <label>Token <small>auto-filled</small><input id="token" type="number" placeholder="from acquire"></label>
         </div>
         <div class="btnrow">
           <button id="acq" class="primary" title="Ask for the lock">Acquire</button>
@@ -120,14 +112,20 @@
         <h3>Protected resource <span class="help" tabindex="0" data-tip="A storage service that only accepts writes carrying a token at least as new as the newest it has seen.">?</span></h3>
         <div class="form">
           <label>Value to write <small>any text</small><input id="rvalue" value="data-1"></label>
-          <div style="display:flex;align-items:flex-end"><button id="rwrite" title="Write using the Resource, Client name and Token from the Lock client card">Write with token</button></div>
+          <div class="form-btn"><button id="rwrite" title="Write using the Resource, Client name and Token from the Lock client card">Write with token</button></div>
         </div>
-        <div id="rresult" class="result" style="margin-top:12px" role="status" aria-live="polite">&mdash;</div>
-        <table id="resTable" style="margin-top:12px"><thead><tr><th>Resource</th><th>Newest token seen</th><th>Last writer</th><th>Value</th></tr></thead><tbody></tbody></table>
+        <div id="rresult" class="result" role="status" aria-live="polite">&mdash;</div>
+        <table id="resTable"><thead><tr><th>Resource</th><th>Newest token seen</th><th>Last writer</th><th>Value</th></tr></thead><tbody></tbody></table>
 
         <h3>Automatic demo <span class="help" tabindex="0" data-tip="Plays the whole scenario for you: A gets a lock and freezes, B takes over, then A wakes up and tries to write.">?</span></h3>
         <button id="fenceDemo" class="primary">Run the fencing demo</button>
         <ol id="fenceSteps" class="steps"></ol>
+      </section>
+
+      <section class="card c-log" id="card-log" data-card="log" aria-labelledby="h-log">
+        <div class="card-h"><h2 id="h-log">Event log <span class="h-sub">what happened</span></h2><span class="crumb">Latest events, newest at the bottom</span></div>
+        <p class="explain">A live diary of what the machines did and what you asked for. Red lines are failures, gold lines are elections.</p>
+        <div id="log" class="log"></div>
       </section>
     </div>
   </main>
