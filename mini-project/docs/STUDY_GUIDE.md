@@ -30,7 +30,7 @@ Three ideas solve it:
 
 **Replica / node**: one server process. We run 5.
 
-**Quorum / majority**: with N=5, majority = 3 (`Math.floor(5/2)+1`, `node.js:18`). Any two majorities overlap in at least one node, so two conflicting decisions can never both get a majority. That is the whole reason split brain is impossible. With 5 nodes you survive **2 failures**.
+**Quorum / majority**: with N=5, majority = 3 (`Math.floor(5/2)+1`, the `MAJORITY` constant at the top of `node.js`). Any two majorities overlap in at least one node, so two conflicting decisions can never both get a majority. That is the whole reason split brain is impossible. With 5 nodes you survive **2 failures**.
 
 **Raft** is a consensus algorithm. It makes all replicas agree on one ordered **log** of commands. Three roles:
 - **Leader**: the only node that accepts client writes. Sends **heartbeats** every 120 ms.
@@ -70,7 +70,6 @@ Browser dashboard (public/)  ->  Gateway (server.js, :8080)  ->  5 replicas (nod
 | [test-chaos.js](../test-chaos.js) | Randomised stress test with a safety checker (proves no two holders overlap). |
 | [bench.js](../bench.js) | Measures latency, throughput, failover time for 3/5/7 nodes. Output in [BENCHMARKS.md](BENCHMARKS.md). |
 | Dockerfile, docker-compose.yml, docs/DEPLOYMENT.md | Running replicas on separate VMs (VPC/cloud part). |
-| sim.js, vlab/, public/lab | The virtual lab (not part of what you're presenting). |
 
 Zero dependencies: plain Node.js `http`, `fs`, `fetch`. Replicas talk to each other over HTTP/JSON.
 
@@ -78,72 +77,75 @@ Zero dependencies: plain Node.js `http`, `fs`, `fetch`. Replicas talk to each ot
 
 ## 4. Code walkthrough: `node.js` (the replica)
 
-### 4.1 Setup (lines 7-23)
+### 4.1 Setup (top of the file)
 Reads `id`, cluster size, data dir from argv. `peers` = the other 4 ids. `MAJORITY` = 3. Timers: heartbeat 120 ms, election timeout random 600-1100 ms (randomness prevents everyone becoming candidate at once). `cfg` holds `prevote` and `checkQuorum` toggles.
 
-### 4.2 Persistence (lines 25-67): survive crashes
+### 4.2 Persistence (`loadDisk()` and `persist()`): survive crashes
 Raft requires `term`, `votedFor` and the `log` to survive a restart.
 - `node<ID>.json` = `{term, votedFor}`, written to a temp file then **renamed** (atomic, so never half-written).
 - `node<ID>.wal` = write-ahead log, **append-only**, one JSON entry per line.
-- `loadDisk()` rebuilds state on start; a torn last line (crash mid-write) is ignored (`line 39`).
+- `loadDisk()` rebuilds state on start; a torn last line (crash mid-write) is ignored.
 - `DURABLE=1` adds `fsync` (forces data onto the physical disk; slower, see benchmarks).
 
-### 4.3 Lock state machine (lines 91-126): the actual lock logic
+### 4.3 Lock state machine (`applyCmd()`): the actual lock logic
 `applyCmd(cmd)` is a **pure, deterministic** function of the command and current state:
 
-- **acquire** (96-105): if a lock exists and `expiresAt > cmd.now`: same owner gets it again (re-entrant), anyone else gets `held`. Otherwise grant: `token = ++sm.fence`, store `{owner, token, expiresAt = now + ttl}`.
-- **renew** (106-112): only the current owner with the matching token, only if not expired, extends the expiry.
-- **release** (113-118): only owner + matching token deletes it.
-- **sweep** (119-123): deletes every expired lock.
+- **acquire**: if a lock exists and `expiresAt > cmd.now`: same owner gets it again (re-entrant), anyone else gets `held`. Otherwise grant: `token = ++sm.fence`, store `{owner, token, expiresAt = now + ttl}`.
+- **renew**: only the current owner with the matching token, only if not expired, extends the expiry.
+- **release**: only owner + matching token deletes it.
+- **sweep**: deletes every expired lock.
 
-**Key design point:** the time `now` is stamped by the leader *inside the command* (`line 347`), not read by each replica. If every replica read its own clock, they would disagree about expiry and diverge. Carrying the time in the log keeps all replicas identical.
+**Key design point:** the time `now` is stamped by the leader *inside the command* (built in the HTTP handler for `/client/*`), not read by each replica. If every replica read its own clock, they would disagree about expiry and diverge. Carrying the time in the log keeps all replicas identical.
 
-`applyCommitted()` (128-139) applies log entries up to `commitIndex` in order, and answers the waiting client request.
+`applyCommitted()` applies log entries up to `commitIndex` in order, and answers the waiting client request.
 
-### 4.4 Role transitions (141-162)
+### 4.4 Role transitions (`stepDown()`, `becomeLeader()`)
 - `stepDown(term)`: adopt a higher term, clear vote, become follower, fail any pending client requests with `leadership-lost`.
 - `becomeLeader()`: initialise per-follower trackers (`nextIndex`, `matchIndex`) and append a **no-op entry** in the new term. Raft can only commit entries from the current term, so this no-op lets the new leader safely commit older entries.
 
-### 4.5 RPCs and handlers (164-211)
+### 4.5 RPCs and handlers (`rpc()` and `raftHandlers`)
 `rpc()` sends a POST with a 300 ms timeout; returns `null` on failure or if the peer is in the `blocked` set (this is how partitions are simulated).
 
 Three handlers:
-1. **`/raft/prevote`** (180): "would you vote for me?" without changing anything. Refuses if a leader was heard recently or my log is behind. This stops an isolated node from inflating its term and disrupting the cluster when it rejoins.
-2. **`/raft/vote`** (186): standard RequestVote. Grants if same term, haven't voted for someone else, and the candidate's log is at least as up to date (`upToDate`, line 177). That rule guarantees a leader always has every committed entry.
-3. **`/raft/append`** (194): AppendEntries, doubles as heartbeat. Rejects stale terms; resets the election timer (leader is alive); checks the **consistency check** (`prevLogIndex/prevLogTerm` must match, else returns a hint to back up); truncates conflicting entries, appends new ones, persists, and advances `commitIndex` to the leader's.
+1. **`/raft/prevote`**: "would you vote for me?" without changing anything. Refuses if a leader was heard recently or my log is behind. This stops an isolated node from inflating its term and disrupting the cluster when it rejoins.
+2. **`/raft/vote`**: standard RequestVote. Grants if same term, haven't voted for someone else, and the candidate's log is at least as up to date (`upToDate()`). That rule guarantees a leader always has every committed entry.
+3. **`/raft/append`**: AppendEntries, doubles as heartbeat. Rejects stale terms; resets the election timer (leader is alive); checks the **consistency check** (`prevLogIndex/prevLogTerm` must match, else returns a hint to back up); truncates conflicting entries, appends new ones, persists, and advances `commitIndex` to the leader's.
 
-### 4.6 Election (213-236)
-When the election timer fires (`line 288`): 
+### 4.6 Election (`tryElection()`)
+When the election timer fires (checked in the 120 ms `setInterval`): 
 1. **PreVote round** (if enabled). Need a majority of "yes" or give up.
 2. Increment term, vote for self, become candidate, persist.
 3. Ask all peers for votes. If a majority (including self) grant, `becomeLeader()`. If someone has a higher term, step down.
 
-### 4.7 Replication and commit (238-280)
-- `propose(cmd)` (270): only the leader. Appends `{term, cmd}` to its log, persists, stores a promise in `pending`, calls `broadcast()`. Resolves when that entry commits (or `timeout` after 3 s).
-- `replicate(p)` (246): sends the follower the entries from `nextIndex[p]`. On success updates `matchIndex`, on failure backs `nextIndex` up using the hint (this is how a lagging or wiped follower catches up).
-- `advanceCommit()` (239): finds the highest index stored on a majority **and from the current term**, sets `commitIndex`, applies it. This is the moment the client is answered.
-- `hasQuorumLease()` (267): has a majority acknowledged within 1.5 s? Used for reads and for check-quorum.
+### 4.7 Replication and commit (`propose()`, `replicate()`, `advanceCommit()`)
+- `propose(cmd)`: only the leader. Appends `{term, cmd}` to its log, persists, stores a promise in `pending`, calls `broadcast()`. Resolves when that entry commits (or `timeout` after 3 s).
+- `replicate(p)`: sends the follower the entries from `nextIndex[p]`. On success updates `matchIndex`, on failure backs `nextIndex` up using the hint (this is how a lagging or wiped follower catches up).
+- `advanceCommit()`: finds the highest index stored on a majority **and from the current term**, sets `commitIndex`, applies it. This is the moment the client is answered.
+- `hasQuorumLease()`: has a majority acknowledged within 1.5 s? Used for reads and for check-quorum.
 
-### 4.8 Timers (282-295)
+### 4.8 Timers (the `setInterval` blocks)
 - Every 120 ms: leader broadcasts heartbeat and runs **check-quorum** (steps down if it cannot reach a majority: prevents a cut-off leader acting as leader). Followers check whether the election deadline passed.
 - Every 300 ms: leader proposes a `sweep` command if any lock has expired. Expiry goes through the log so every replica deletes the same locks.
 
-### 4.9 HTTP API (297-356)
+### 4.9 HTTP API (the `http.createServer` handler)
 `/raft/*` internal; `/client/acquire|renew|release` turn the request into a command and call `propose`; `/client/locks` returns the table only if `hasQuorumLease()` (so a stale leader never serves stale reads); `/status` for the dashboard; `/admin/*` for fault injection (`block` = partition, `crash`, `wipe`, `config`).
 
-### 4.10 Crash simulation (358-373)
+### 4.10 Crash simulation (`crash()` and `boot()`)
 `crash()` drops all in-memory state; `boot()` reloads from disk only: `commitIndex=0`, `sm` empty. The state machine is then **rebuilt by replaying the log** as the leader re-commits. That is crash recovery.
+
+### 4.11 Logging (`log()`)
+Every replica writes structured log lines through `log(src, level, message)`: elections and votes, `AppendEntries`, `COMMIT`, the lock decision applied by every replica (`logApply()`), write-ahead-log writes, crashes and recovery. Each line is printed to the process's own stdout and kept in a small buffer served at `GET /logs`. The gateway merges all five buffers with its own lines and serves them at `GET /api/term`, which is what the dashboard's **live backend terminal** shows. Heartbeats are recorded only when the "heartbeats" box is ticked, because they are very chatty.
 
 ---
 
 ## 5. Code walkthrough: `server.js` (gateway)
 
-- **Spawns replicas** (`startNode`, line 23) as child processes; `REMOTE_NODES` mode instead talks to replicas on other VMs.
-- **`call(id, route, body)`** (41): HTTP helper with 4 s timeout.
-- **`statuses()`** (50) polls every node's `/status`; **`currentLeader()`** (58) picks the highest-term leader.
-- **`viaLeader()`** (65): *leader discovery*. Try cached leader, else probe all. If node replies `not-leader` with a hint, follow it. Retries up to 5 times with 250 ms gaps. Retries on `leadership-lost`/`timeout` only for idempotent ops (acquire/renew, not release).
-- **Fenced resource** (`/api/resource/write`, line 125): keeps `maxToken` per key; **rejects `token < maxToken`**. This is the demo of fencing.
-- **Fault injection**: `/api/fault/kill|restart|partition|heal|wipe`. Partition = tell each node a list of peers to ignore (`applyPartition`, line 88).
+- **Spawns replicas** (`startNode`) as child processes; `REMOTE_NODES` mode instead talks to replicas on other VMs.
+- **`call(id, route, body)`**: HTTP helper with 4 s timeout.
+- **`statuses()`** polls every node's `/status`; **`currentLeader()`** picks the highest-term leader.
+- **`viaLeader()`**: *leader discovery*. Try cached leader, else probe all. If node replies `not-leader` with a hint, follow it. Retries up to 5 times with 250 ms gaps. Retries on `leadership-lost`/`timeout` only for idempotent ops (acquire/renew, not release).
+- **Fenced resource** (`/api/resource/write`): keeps `maxToken` per key; **rejects `token < maxToken`**. This is the demo of fencing.
+- **Fault injection**: `/api/fault/kill|restart|partition|heal|wipe`. Partition = tell each node a list of peers to ignore (`applyPartition`).
 - Serves the dashboard files from `public/`.
 
 ---
@@ -170,7 +172,7 @@ If someone else holds it: same path, but `applyCmd` returns `{ok:false, error:'h
 ### C. Network partition (leader isolated)
 - Majority side (4 nodes) elects a new leader and keeps working.
 - The old leader can't reach a majority: `hasQuorumLease` is false -> it **steps down** (check-quorum) and refuses reads. Even if it didn't, its writes can't reach a majority so can't commit.
-- On heal, the old leader sees a higher term, steps down, its uncommitted entries are **truncated** (`line 203`), and it catches up. One leader, no split brain.
+- On heal, the old leader sees a higher term, steps down, its uncommitted entries are **truncated** (in the `/raft/append` handler), and it catches up. One leader, no split brain.
 
 ### D. Lease expiry
 Leader's 300 ms sweeper notices an expired lock -> proposes `sweep{now}` -> committed -> every replica deletes it. The next `acquire` gets a **higher** token.

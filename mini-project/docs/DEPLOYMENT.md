@@ -16,17 +16,17 @@ The same code runs locally (replicas are child processes), in Docker (section 1)
 | `NODE_HOST` | replica | interface to bind (`0.0.0.0` on VMs/containers) |
 | `DURABLE=1` | replica | `fsync` every write (production setting) |
 | `REMOTE_NODES` | gateway | same list; switches the gateway to remote mode (fault injection uses each replica's admin API: crash / start / wipe) |
-| `BASIC_AUTH=user:pass` | gateway | require HTTP basic auth for the dashboard, lab and every API |
+| `BASIC_AUTH=user:pass` | gateway | require HTTP basic auth for the dashboard and every API |
 | `DATA_DIR`, `PORT`, `BASE_PORT` | both | data directory, gateway port, local replica base port |
 
 ## 1. Docker Compose (quickest "VPC")
 
 ```bash
 docker compose up --build
-# dashboard http://localhost:8080   lab http://localhost:8080/lab/
+# dashboard http://localhost:8080
 ```
 
-Five replica containers and a gateway share a private bridge network; only the gateway publishes a port. Each replica has a named volume (its disk), so `docker compose restart node3` is a real process restart that reloads term, vote and log from disk. Set `BASIC_AUTH=user:password` in the environment to password-protect the lab.
+Five replica containers and a gateway share a private bridge network; only the gateway publishes a port. Each replica has a named volume (its disk), so `docker compose restart node3` is a real process restart that reloads term, vote and log from disk. Set `BASIC_AUTH=user:password` in the environment to password-protect the dashboard.
 
 ## 2. AWS (EC2 + VPC)
 
@@ -90,25 +90,25 @@ export BASIC_AUTH="lab:choose-a-password"
 node server.js        # needs package.json, server.js, public/
 ```
 
-Put an Application/Network Load Balancer in front (HTTPS with an ACM certificate) and forward to `:8080`. The gateway is stateless apart from the demo "protected resource", so more than one can run behind the load balancer for the lock API; use one for the dashboard/lab (the demo resource lives in its memory).
+Put an Application/Network Load Balancer in front (HTTPS with an ACM certificate) and forward to `:8080`. The gateway is stateless apart from the demo "protected resource", so more than one can run behind the load balancer for the lock API; use one for the dashboard (the demo resource lives in its memory).
 
 ### 2.4 Verify
 
 ```bash
 curl -u lab:pass https://<lb-dns>/api/cluster      # five nodes up, one leader
-node test.js   # edit B to the public URL, or run the lab steps in the browser
+node test.js   # edit B to the public URL, or follow the dashboard steps in the browser
 ```
 
 Fault injection works in remote mode through the replicas' admin API (`/admin/crash`, `/admin/start`, `/admin/wipe`); for infrastructure-level faults, also try `sudo systemctl stop lock-node`, `aws ec2 stop-instances`, or security-group edits to create **real** network partitions.
 
-## 3. Hosting the virtual lab publicly
+## 3. Hosting the dashboard publicly
 
-The lab at `/lab/` needs the running gateway and cluster (the Simulation tab is the real service). Options: a single small VM running Docker Compose (simplest, about the cost of one `t3.small` or equivalent on Render/Railway/Fly.io), or the AWS layout above. **Always set `BASIC_AUTH`** (or restrict by IP): the dashboard exposes crash and wipe controls.
+The dashboard needs the running gateway and cluster. Options: a single small VM running Docker Compose (simplest, about the cost of one `t3.small` or equivalent on Render/Railway/Fly.io), or the AWS layout above. **Always set `BASIC_AUTH`** (or restrict by IP): the dashboard exposes crash and wipe controls.
 
 ## 4. Security and limitations
 
 * The replica API (`/raft/*`, `/client/*`, `/admin/*`) has **no authentication** and no TLS. It must only be reachable from the replica and gateway security groups. For production, add mutual TLS between replicas and an authenticated client API.
 * `DURABLE=1` makes writes survive power loss; without it only a process crash is tolerated.
-* The wipe operation (lab only) is unsafe in real Raft clusters; treat a replaced disk as a new member (no membership changes are implemented).
+* The wipe operation (demo only) is unsafe in real Raft clusters; treat a replaced disk as a new member (no membership changes are implemented).
 * Lease expiry assumes loosely synchronised clocks (use chrony / Amazon Time Sync).
 * **Tested:** section 1 (Docker Compose: gateway in remote mode, kill / restart / wipe through the admin API, `docker compose restart` of all five replicas with the lock surviving, and basic auth). **Not tested:** section 2 (AWS) was written from the design and has not been run against a real AWS account.

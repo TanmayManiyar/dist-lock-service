@@ -1,6 +1,6 @@
 # Five replicas + gateway on a private bridge network (the VPC analogue).
 # Only the gateway publishes a port; replicas are reachable only inside the network.
-#   docker compose up --build        ->  http://localhost:8080  and  http://localhost:8080/lab/
+#   docker compose up --build        ->  http://localhost:8080
 # Optional: BASIC_AUTH=user:password docker compose up   (protects the dashboard and fault-injection API)
 x-replica: &replica
   build: .

@@ -17,8 +17,7 @@
     </div>
   </div>
   <nav class="topnav" aria-label="Main">
-    <span class="navhint">Click here to go to the virtual lab <span class="arr">&rarr;</span></span><a href="/lab/" class="navlab">Virtual Lab</a>
-    <button id="resetAll" class="warn" title="Wipe everything and start again with a fresh, healthy cluster">&#8635; Reset simulation</button>
+    <button id="resetAll" class="warn" title="Wipe everything and start again with a fresh, healthy cluster">&#8635; Reset cluster</button>
     <div class="status" id="summary" role="status" aria-live="polite">connecting…</div>
   </nav>
 </header>
@@ -49,7 +48,7 @@
       <dt>Fencing token</dt><dd>A number that only goes up with each new lock. Storage refuses writes with an old number.</dd>
       <dt>Log / commit</dt><dd>The list of decisions each machine stores. Committed means a majority has saved it.</dd>
     </dl></div>
-    <div class="guide-foot">Made a mess? <button id="w-reset" class="sm warn">&#8635; Reset simulation</button> puts everything back to a fresh, healthy cluster.</div>
+    <div class="guide-foot">Made a mess? <button id="w-reset" class="sm warn">&#8635; Reset cluster</button> puts everything back to a fresh, healthy cluster.</div>
   </details>
 
   <main>

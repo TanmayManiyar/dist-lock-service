@@ -1,4 +1,4 @@
-/* Shared design system for the dashboard and the virtual lab (light theme) */
+/* Shared design system for the dashboard (light theme) */
 :root{
   --bg:#ffffff;--surface:#ffffff;--soft:#f5f7fb;--soft2:#eceff6;
   --line:#dde2ec;--line-strong:#c3cad9;
@@ -96,5 +96,4 @@ body::after{
   animation:bubbleB 34s ease-in-out infinite alternate}
 @keyframes bubbleA{0%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-5vh) scale(1.12)}100%{transform:translate(-5vw,7vh) scale(.94)}}
 @keyframes bubbleB{0%{transform:translate(0,0) scale(1.05)}50%{transform:translate(-7vw,5vh) scale(.92)}100%{transform:translate(5vw,-6vh) scale(1.14)}}
-.embed body::before,.embed body::after{display:none}
 @media (prefers-reduced-motion:reduce){body::before,body::after{animation:none}}

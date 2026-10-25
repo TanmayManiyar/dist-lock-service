@@ -1,5 +1,5 @@
+// Live-system panel for the lab's Simulation tab (runs against the in-browser simulation in sim.js).
 const qs = new URLSearchParams(location.search);
-if (qs.has('embed')) document.documentElement.classList.add('embed');
 const $ = id => document.getElementById(id);
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) }).then(r => r.json());
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -68,9 +68,6 @@ function storyOf(c) {
 function render(c) {
   cluster = c;
   const up = c.nodes.filter(n => n.up).length, maj = Math.floor(c.n / 2) + 1;
-  const el = $('summary');
-  el.textContent = c.leader ? `Leader: N${c.leader} · ${up}/${c.n} machines up (need ${maj})` : `No leader · ${up}/${c.n} machines up (need ${maj})`;
-  el.className = 'status ' + (c.leader ? 'ok' : 'bad');
   const [tone, text] = storyOf(c);
   const st = $('story'); if (st) { st.className = 'story ' + tone; st.textContent = text; }
   drawRing(c);
@@ -138,7 +135,7 @@ async function poll() {
   try {
     const [c, l] = await Promise.all([fetch('/api/cluster').then(r => r.json()), fetch('/api/locks').then(r => r.json())]);
     render(c); renderLocks(l);
-  } catch { $('summary').textContent = 'gateway unreachable'; $('summary').className = 'status bad'; }
+  } catch { const st = $('story'); if (st) { st.className = 'story bad'; st.textContent = 'The simulation is not responding.'; } }
   setTimeout(poll, 500);
 }
 
@@ -232,78 +229,6 @@ async function resetSim() {
   setTimeout(() => toast('Simulation reset: a fresh cluster is starting.'), 900);
 }
 window.resetSim = resetSim;
-$('resetAll').onclick = resetSim;
-$('w-reset').onclick = resetSim;
-
-function flash(id) {
-  const c = $(id); if (!c) return;
-  c.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  c.classList.add('focus'); setTimeout(() => c.classList.remove('focus'), 2600);
-}
-document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => flash('card-' + b.dataset.go));
-$('w-acq').onclick = async () => { $('key').value = 'orders-db'; $('owner').value = 'client-A'; $('ttl').value = 8000; flash('card-lock'); await sleep(500); $('acq').click(); };
-$('w-other').onclick = async () => { const prev = $('owner').value; flash('card-lock'); await sleep(500); $('owner').value = 'client-B'; $('acq').click(); await sleep(900); $('owner').value = prev; };
-$('w-crash').onclick = () => { flash('card-cluster'); crashLeader(); };
-$('w-iso').onclick = () => { flash('card-cluster'); isolate(); };
-$('w-heal').onclick = () => { flash('card-cluster'); $('healBtn').click(); };
-$('w-fence').onclick = async () => { flash('card-fence'); await sleep(500); $('fenceDemo').click(); };
-try { if (localStorage.getItem('dash.guide') === 'closed') $('guide').open = false; } catch {}
-$('guide').addEventListener('toggle', () => { try { localStorage.setItem('dash.guide', $('guide').open ? 'open' : 'closed'); } catch {} });
-
-// ---------- live backend terminal: real log lines from the gateway and the 5 replica processes ----------
-(function initTerm() {
-  const card = $('card-term'); if (!card || qs.has('embed')) return;
-  const body = $('termBody'), stat = $('termStat');
-  const GROUPS = { all: null, req: ['http', 'route'], raft: ['raft'], lock: ['lock', 'fence'], disk: ['wal', 'boot'], fault: ['fault', 'proc'] };
-  let seq = 0, lines = [], src = 'all', node = 'all', details = true, paused = false, follow = true, started = false;
-  const pass = l => (!GROUPS[src] || GROUPS[src].includes(l.src)) && (node === 'all' || l.node === node) && (details || l.lvl !== 'DEBUG');
-  const time = ts => { const d = new Date(ts), p = (n, w = 2) => String(n).padStart(w, '0'); return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${p(d.getMilliseconds(), 3)}`; };
-  const hl = t => esc(t)
-    .replace(/\b(GRANTED|VOTE GRANTED|RELEASED|RENEWED|ACCEPTED|OK)\b/g, '<b class="g">$1</b>')
-    .replace(/\b(REFUSED|REJECTED|DENIED|EXPIRED|FAILED|stale token)\b/g, '<b class="r">$1</b>')
-    .replace(/\b(COMMIT|LEADER|FAULT|RESET)\b/g, '<b class="y">$1</b>')
-    .replace(/\b(token=\d+|fencing token=\d+)\b/g, '<b class="c">$1</b>');
-  const row = l => `<div class="tl ${l.lvl}"><span class="tt">${time(l.ts)}</span><span class="tn ${l.node === 'GW' ? 'gw' : 'n' + l.node.slice(1)}">${l.node}</span><span class="ts s-${l.src}">${l.src}</span><span class="tv">${l.lvl}</span><span class="tm">${hl(l.msg)}</span></div>`;
-  const atBottom = () => body.scrollTop + body.clientHeight >= body.scrollHeight - 30;
-  function redraw() { body.innerHTML = lines.filter(pass).slice(-600).map(row).join(''); body.scrollTop = body.scrollHeight; count(); }
-  function count() { $('termCount').textContent = `${lines.length} lines received`; }
-  function add(fresh) {
-    const show = fresh.filter(pass); if (!show.length) return;
-    body.insertAdjacentHTML('beforeend', show.map(row).join(''));
-    while (body.childElementCount > 600) body.removeChild(body.firstChild);
-    if (follow) body.scrollTop = body.scrollHeight;
-  }
-  body.addEventListener('scroll', () => { follow = atBottom(); });
-  async function tick() {
-    if (!paused) {
-      try {
-        const r = await fetch('/api/term?since=' + seq).then(x => x.json());
-        if (!r || !Array.isArray(r.lines)) throw new Error('no live backend');
-        if (r.seq < seq) { lines = []; body.innerHTML = ''; }          // gateway was restarted
-        seq = r.seq;
-        if (r.lines.length) { lines.push(...r.lines); if (lines.length > 2500) lines.splice(0, lines.length - 2500); add(r.lines); count(); }
-        stat.textContent = '● live'; stat.className = 'crumb tlive'; started = true;
-      } catch {
-        if (!started) { card.hidden = true; return; }                  // static demo without a backend: no terminal
-        stat.textContent = '○ backend not reachable'; stat.className = 'crumb toff';
-      }
-    }
-    setTimeout(tick, 400);
-  }
-  $('termChips').onclick = e => { const b = e.target.closest('button[data-src]'); if (!b) return; src = b.dataset.src; $('termChips').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); redraw(); };
-  $('termNode').onchange = e => { node = e.target.value; redraw(); };
-  $('termDebug').onchange = e => { details = e.target.checked; redraw(); };
-  $('termBeat').onchange = e => { fetch('/api/config', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ trace: e.target.checked }) }).catch(() => {}); };
-  $('termPause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; e.target.classList.toggle('on', paused); if (!paused) tick(); };
-  $('termClear').onclick = () => { lines = []; body.innerHTML = ''; count(); };
-  $('termDl').onclick = () => {
-    const txt = lines.filter(pass).map(l => `${time(l.ts)} ${l.node.padEnd(2)} ${l.src.padEnd(5)} ${l.lvl.padEnd(5)} ${l.msg}`).join('\n') + '\n';
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); a.download = 'lockservice-backend-log.txt';
-    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  fetch('/api/config').then(r => r.json()).then(c => { $('termBeat').checked = !!c.trace; }).catch(() => {});
-  tick();
-})();
 
 pollResource();
 poll();
