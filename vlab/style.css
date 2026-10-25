@@ -140,10 +140,10 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 380px,#fff 100%) fixed}
 .area-title h2{border-left:5px solid var(--c2);padding-left:12px}
 
 /* cards: one colour each */
-.c-cluster{border-top:5px solid var(--c1);background:linear-gradient(#eef2ff,#fff 110px)}
-.c-log{border-top:5px solid #475569;background:linear-gradient(#f1f5f9,#fff 90px)}
-.c-lock{border-top:5px solid var(--c2);background:linear-gradient(#f0fdfa,#fff 110px)}
-.c-fence{border-top:5px solid var(--c5);background:linear-gradient(#f5f3ff,#fff 110px)}
+.c-cluster{border-top:5px solid var(--c1);background:linear-gradient(#eef2ff,rgba(255,255,255,.72) 110px)}
+.c-log{border-top:5px solid #475569;background:linear-gradient(#f1f5f9,rgba(255,255,255,.72) 90px)}
+.c-lock{border-top:5px solid var(--c2);background:linear-gradient(#f0fdfa,rgba(255,255,255,.72) 110px)}
+.c-fence{border-top:5px solid var(--c5);background:linear-gradient(#f5f3ff,rgba(255,255,255,.72) 110px)}
 .c-cluster h2{color:#3730a3}.c-lock h2{color:#115e59}.c-fence h2{color:#5b21b6}.c-log h2{color:#334155}
 .fault{background:#fff7ed;border-color:#fdba74}
 .fault h3{color:#9a3412}
@@ -244,3 +244,5 @@ th{background:#eef2ff;color:#3730a3}
   .c-lock .result,.c-fence .result{min-height:34px;padding:6px 10px}
   button{min-height:34px;padding:6px 12px}
 }
+.walk li,.fault,.more,.log{backdrop-filter:blur(6px)}
+.walk li{background:rgba(255,255,255,.8)}

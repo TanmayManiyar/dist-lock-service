@@ -72,7 +72,7 @@
 
 /* simulation: part 1 = steps, part 2 = working area */
 .sim{display:flex;flex-direction:column;gap:26px}
-.steps-area{background:#fff;border:2px solid #bcd0f7;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);background:linear-gradient(#f7faff,#fff 120px)}
+.steps-area{background:#fff;border:2px solid #bcd0f7;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);background:linear-gradient(#f7faff,rgba(255,255,255,.72) 120px)}
 .sa-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .sa-head h2{font-size:21px;margin-top:2px}
 .sa-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -249,7 +249,7 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 360px,#fff 100%) fixed}
 .cur-step .eyebrow{color:#7c3aed}
 .predict{background:#fff7ed;border-color:#fdba74;color:#9a3412}
 .fold:nth-child(3n+1)>summary{border-left:4px solid var(--c2)}.fold:nth-child(3n+2)>summary{border-left:4px solid var(--c3)}.fold:nth-child(3n+3)>summary{border-left:4px solid var(--c5)}
-.work-area{border-top:5px solid var(--c2);background:linear-gradient(#f0fdfa,#fff 120px)}
+.work-area{border-top:5px solid var(--c2);background:linear-gradient(#f0fdfa,rgba(255,255,255,.72) 120px)}
 .minibar{background:linear-gradient(90deg,#312e81,#0e7490)}
 #dlNotes{background:linear-gradient(90deg,#4f46e5,#7c3aed);border-color:#4f46e5}
 
@@ -269,3 +269,9 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 360px,#fff 100%) fixed}
   .minibar{display:none!important}
   #toWork{display:none}
 }
+.xcard,.q,.work-area,.fold,.scorecard{backdrop-filter:blur(8px)}
+.xcard{background-color:rgba(255,255,255,.55)}
+.q,.fold{background:rgba(255,255,255,.78)}
+.work-area{background-color:rgba(255,255,255,.6)}
+.tabs,.top{backdrop-filter:blur(8px)}
+.tabs{background:rgba(255,255,255,.7)}
