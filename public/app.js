@@ -84,7 +84,7 @@ function render(c) {
     : `<tr><td><b>N${n.id}</b></td><td><span class="badge down">down</span></td><td colspan="4" style="color:var(--faint)">crashed: not running</td></tr>`).join('');
 
   const log = $('log'), atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 24;
-  log.innerHTML = c.events.slice(-8).map(e => {
+  log.innerHTML = c.events.map(e => {
     const f = friendly(e.msg);
     const who = e.node === 'client' ? 'You' : 'N' + e.node;
     return `<div class="ev ${f.cls}" title="${esc(e.msg)}"><time>${new Date(e.ts).toLocaleTimeString([], { hour12: false })}</time><span class="who">${who}</span><span>${esc(f.text)}</span></div>`;

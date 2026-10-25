@@ -122,8 +122,8 @@ label small{display:block;font-weight:400;color:var(--faint);font-size:11px;marg
 button.primary{background:linear-gradient(90deg,#4f46e5,#7c3aed);border-color:#4f46e5}
 button.primary:hover:not(:disabled){background:linear-gradient(90deg,#4338ca,#6d28d9);border-color:#4338ca}
 
-/* event log: shows the latest events in full, never clipped, never scrolled */
-.log{font-size:12px;background:#0f172a;border-radius:var(--radius-sm);padding:6px 0}
+/* event log: fixed height, scrolls within itself and follows the newest event */
+.log{height:190px;overflow-y:auto;font-size:12px;background:#0f172a;border-radius:var(--radius-sm);padding:6px 0}
 .ev{display:grid;grid-template-columns:58px 40px 1fr;gap:10px;padding:3px 12px;align-items:baseline;color:#94a3b8}
 .ev:hover{background:#1e293b}
 .ev time{color:#64748b;font-size:11.5px;font-family:var(--mono)}
