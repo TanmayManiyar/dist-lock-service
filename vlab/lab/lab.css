@@ -275,3 +275,17 @@ body{background:linear-gradient(180deg,#eef2ff 0,#f8fafc 360px,#fff 100%) fixed}
 .work-area{background-color:rgba(255,255,255,.6)}
 .tabs,.top{backdrop-filter:blur(8px)}
 .tabs{background:rgba(255,255,255,.7)}
+
+@media (min-width:900px) and (min-height:480px){
+  .sim iframe{border:0;border-radius:0;background:transparent}
+  .work-area{padding:8px 10px 6px}
+  .wa-head h2{font-size:16px;margin-top:0}
+  .wa-head .eyebrow{display:none}
+  .wa-head{align-items:center;margin-bottom:4px}
+}
+
+/* the step box sits inside the list, right under the current step */
+.stepper li.stepbox{display:block;padding:0;border:0;background:none;cursor:default;margin:2px 0 8px}
+.stepper li.stepbox:hover{background:none}
+.stepper li.stepbox .cur-step{margin:0}
+.sa-body{display:block}
