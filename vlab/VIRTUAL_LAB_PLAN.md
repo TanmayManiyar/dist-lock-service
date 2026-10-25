@@ -90,7 +90,7 @@ What the lab adds around the real cluster (small additions to the project, not a
 | Phase | Work | Output |
 |---|---|---|
 | A | Lab shell: tab layout, quiz engine, navigation, theme; embed dashboard in Simulation tab | Navigable lab with Exp 2 skeleton |
-| B | Lab panel + step verification + reset + protocol toggles in `node.js` / `server.js` | Experiments are guided and self-checking |
+| B | Lab panel + step verification + reset + protocol toggles in `replica.js` / `server.js` | Experiments are guided and self-checking |
 | C | Experiments 1-6: theory, procedure, scenarios, 8-10 pre/post questions each (about 100 total) | All experiments complete |
 | D | Optional experiment 7 with Phase 2 benchmarks | |
 | E | Testing (scenario checks, quiz data validation), mobile layout, README / manual | Submittable lab |

@@ -1,5 +1,5 @@
 // In-browser simulation of the lock service: five Raft replicas + gateway, no server needed.
-// Same algorithm as node.js (PreVote, check-quorum, WAL semantics, fencing counter), but the "network" is
+// Same algorithm as the Mini Project replica (PreVote, check-quorum, WAL semantics, fencing counter), but the "network" is
 // in-memory message passing with a few ms of latency, and each replica's "disk" is a JS object that survives
 // crashes (and is dropped by "wipe"). Exposes window.__SIM and routes fetch('/api/...') to it.
 (function () {

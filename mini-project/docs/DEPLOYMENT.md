@@ -4,7 +4,7 @@ The system has three kinds of processes:
 
 | Process | Count | Command | Network |
 |---|---|---|---|
-| **Replica** | 5 (one per VM) | `node node.js <id> 5 /var/lib/lock` | private subnet, peers talk on `:7001` |
+| **Replica** | 5 (one per VM) | `node replica.js <id> 5 /var/lib/lock` | private subnet, peers talk on `:7001` |
 | **Gateway** | 1 or more | `node server.js` (with `REMOTE_NODES`) | public via load balancer, `:8080` |
 | **Clients / dashboard** | any | HTTP to the gateway | internet |
 
@@ -47,7 +47,7 @@ On each VM (user-data or manually):
 ```bash
 sudo dnf install -y nodejs git
 sudo useradd -r lock && sudo mkdir -p /opt/lock /var/lib/lock && sudo chown lock /var/lib/lock
-sudo cp node.js package.json /opt/lock/        # from this repository
+sudo cp replica.js package.json /opt/lock/        # from this repository
 ```
 
 Attach a dedicated EBS volume mounted at `/var/lib/lock` (gp3). Create `/etc/lock-node.env`:
@@ -68,7 +68,7 @@ After=network-online.target
 [Service]
 User=lock
 EnvironmentFile=/etc/lock-node.env
-ExecStart=/usr/bin/node /opt/lock/node.js ID 5 /var/lib/lock
+ExecStart=/usr/bin/node /opt/lock/replica.js ID 5 /var/lib/lock
 Restart=always
 RestartSec=1
 

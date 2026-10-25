@@ -14,7 +14,7 @@
       "name": "One replica only (N1 of 5)",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/node.js",
+      "program": "${workspaceFolder}/replica.js",
       "args": ["1", "5", "${workspaceFolder}/data"],
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"]

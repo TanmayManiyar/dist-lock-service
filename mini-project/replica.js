@@ -1,5 +1,5 @@
 // One replica of the lock service: Raft consensus + a lock state machine with fencing tokens.
-// Usage: node node.js <id> <clusterSize> <dataDir>
+// Usage: node replica.js <id> <clusterSize> <dataDir>
 const http = require('http');
 const fs = require('fs');
 const path = require('path');

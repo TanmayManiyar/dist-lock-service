@@ -30,7 +30,7 @@ Three ideas solve it:
 
 **Replica / node**: one server process. We run 5.
 
-**Quorum / majority**: with N=5, majority = 3 (`Math.floor(5/2)+1`, the `MAJORITY` constant at the top of `node.js`). Any two majorities overlap in at least one node, so two conflicting decisions can never both get a majority. That is the whole reason split brain is impossible. With 5 nodes you survive **2 failures**.
+**Quorum / majority**: with N=5, majority = 3 (`Math.floor(5/2)+1`, the `MAJORITY` constant at the top of `replica.js`). Any two majorities overlap in at least one node, so two conflicting decisions can never both get a majority. That is the whole reason split brain is impossible. With 5 nodes you survive **2 failures**.
 
 **Raft** is a consensus algorithm. It makes all replicas agree on one ordered **log** of commands. Three roles:
 - **Leader**: the only node that accepts client writes. Sends **heartbeats** every 120 ms.
@@ -54,7 +54,7 @@ Three ideas solve it:
 ## 3. Architecture (files and what each does)
 
 ```
-Browser dashboard (public/)  ->  Gateway (server.js, :8080)  ->  5 replicas (node.js, :7001..7005)
+Browser dashboard (public/)  ->  Gateway (server.js, :8080)  ->  5 replicas (replica.js, :7001..7005)
                                        |                              |
                               fault injection,                 Raft + lock state machine
                               leader discovery,                 + disk (data/nodeX.json, .wal)
@@ -63,7 +63,7 @@ Browser dashboard (public/)  ->  Gateway (server.js, :8080)  ->  5 replicas (nod
 
 | File | Role |
 |---|---|
-| [node.js](../node.js) | **One replica.** Raft (election, replication, commit) + lock state machine + disk persistence. The core of the project. ~370 lines. |
+| [replica.js](../replica.js) | **One replica.** Raft (election, replication, commit) + lock state machine + disk persistence. The core of the project. ~370 lines. |
 | [server.js](../server.js) | **Gateway.** Spawns the 5 replicas as child processes, finds the leader, forwards client requests, injects faults (kill/partition), hosts the fenced-resource demo, serves the dashboard. |
 | [public/](../public) | Dashboard UI (HTML/JS/CSS) showing nodes live and buttons for faults. |
 | [test.js](../test.js) | Smoke test: 10 checks (election, exclusion, failover, expiry, partition, heal). |
@@ -75,7 +75,7 @@ Zero dependencies: plain Node.js `http`, `fs`, `fetch`. Replicas talk to each ot
 
 ---
 
-## 4. Code walkthrough: `node.js` (the replica)
+## 4. Code walkthrough: `replica.js` (the replica)
 
 ### 4.1 Setup (top of the file)
 Reads `id`, cluster size, data dir from argv. `peers` = the other 4 ids. `MAJORITY` = 3. Timers: heartbeat 120 ms, election timeout random 600-1100 ms (randomness prevents everyone becoming candidate at once). `cfg` holds `prevote` and `checkQuorum` toggles.

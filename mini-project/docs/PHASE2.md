@@ -6,10 +6,10 @@
 
 | Component | File | Notes |
 |---|---|---|
-| Replica: Raft + lock state machine | `node.js` | PreVote, check-quorum, leader no-op, pipelined AppendEntries, quorum-lease reads, fencing counter in the replicated state machine |
-| Durable storage | `node.js` | `term/votedFor` in an atomically renamed meta file; the log in an **append-only write-ahead log** (torn last line ignored on recovery); optional `DURABLE=1` = `fsync` every write |
+| Replica: Raft + lock state machine | `replica.js` | PreVote, check-quorum, leader no-op, pipelined AppendEntries, quorum-lease reads, fencing counter in the replicated state machine |
+| Durable storage | `replica.js` | `term/votedFor` in an atomically renamed meta file; the log in an **append-only write-ahead log** (torn last line ignored on recovery); optional `DURABLE=1` = `fsync` every write |
 | Gateway | `server.js` | leader discovery and caching, redirects, fault-injection control plane, fenced demo resource, optional basic auth |
-| Simulated process crash | `node.js` (`/admin/crash`, `/admin/start`, `/admin/wipe`) | lets the same fault buttons work for replicas on remote hosts / containers |
+| Simulated process crash | `replica.js` (`/admin/crash`, `/admin/start`, `/admin/wipe`) | lets the same fault buttons work for replicas on remote hosts / containers |
 | Dashboard (frontend) with live backend terminal | `public/` | cluster view, fault injection, lock client, fencing demo, real log stream |
 | Deployment | `Dockerfile`, `docker-compose.yml`, [DEPLOYMENT.md](DEPLOYMENT.md) | per-replica containers on a private network; AWS VPC/EC2 guide |
 
