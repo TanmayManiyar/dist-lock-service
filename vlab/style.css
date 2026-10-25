@@ -104,9 +104,9 @@ main{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:
 .more>summary::-webkit-details-marker{display:none}
 
 /* lock client and fencing */
-.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
 .form input{width:100%;min-width:0}
-label small{display:block;font-weight:400;color:var(--faint);font-size:11px;margin-top:-1px}
+label small{display:block;font-weight:400;color:var(--mute);font-size:11px;line-height:1.35;margin-top:-1px}
 .form-btn{display:flex;align-items:flex-end}
 .result{margin-top:8px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--soft);border:1px solid var(--line);font-family:var(--mono);font-size:12.5px;min-height:38px;display:flex;align-items:center;gap:8px;line-height:1.45}
 .result.ok{background:var(--good-soft);border-color:var(--good-line);color:var(--good-ink)}
