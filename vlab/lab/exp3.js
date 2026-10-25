@@ -38,7 +38,7 @@ window.EXP = {
 <div class="box warn"><b class="t">Common misconception</b>"Replication means every node must confirm." Only a majority must; the slowest nodes can be ignored.</div>`,
 
   steps: [
-    { title: 'Inspect the logs',
+    { title: 'Inspect the logs', confirm: true,
       text: 'Scroll to the <b>node table</b> under the cluster ring. Compare <b>Log</b> and <b>Commit</b> for all five nodes.',
       predict: 'Will every node show the same log length and commit index?',
       check: c => H.upCount(c) === c.n && !!c.leader && H.inSync(c),

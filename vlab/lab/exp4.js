@@ -36,7 +36,7 @@ window.EXP = {
 <div class="box warn"><b class="t">Common misconception</b>"The old leader sees nobody, so it must be dead." It is alive and still believes it is leader. That is exactly why terms and quorums exist.</div>`,
 
   steps: [
-    { title: 'Healthy cluster',
+    { title: 'Healthy cluster', confirm: true,
       text: 'Check that all 5 nodes are up, one is leader, and no links are cut (the "Cut off from" column shows a dash).',
       predict: 'Which node is the leader and what term is it in?',
       check: c => H.upCount(c) === c.n && H.leaders(c).length === 1 && healed(c),
