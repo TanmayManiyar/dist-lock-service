@@ -52,7 +52,7 @@ window.EXP = {
 <div class="box warn"><b class="t">Common misconception</b>"The node with the highest ID wins." Raft has no such rule: whichever node times out first (and has an up-to-date log) usually wins.</div>`,
 
   steps: [
-    { title: 'Find the leader',
+    { title: 'Find the leader', confirm: true,
       text: 'Look at the cluster ring: the leader is gold with a dark outline. Note its node number and the term shown under each node.',
       predict: 'Which node is the leader, and what term is the cluster in?',
       check: c => upCount(c) === c.n && !!c.leader,

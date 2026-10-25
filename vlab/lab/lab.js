@@ -253,7 +253,8 @@ function buildExperiment(EXP) {
     focusList = all ? [] : focusOf(s.text + ' ' + s.title);
     cs.innerHTML = all
       ? '<div class="st">&#10003; All steps complete</div><p>Write what you noticed in "My notes", then take the Posttest.</p><button class="primary" id="toPost">Go to the Posttest &rarr;</button>'
-      : `<div class="eyebrow">Step ${cur + 1}</div><div class="st">${esc(s.title)}</div><p>${s.text}</p><div class="predict"><b>Think first:</b> ${s.predict}</div><div class="chk no" id="chk">Waiting for you to do this step...</div><button class="sm" id="toWork">Go to the working area &darr;</button>`;
+      : `<div class="eyebrow">Step ${cur + 1}</div><div class="st">${esc(s.title)}</div><p>${s.text}</p><div class="predict"><b>Think first:</b> ${s.predict}</div><div class="chk no" id="chk">Waiting for you to do this step...</div><button class="sm" id="toWork">Go to the working area &darr;</button>${s.confirm ? ' <button class="sm primary" id="ackBtn">I have noted this</button>' : ''}`;
+    if (s.confirm && $('#ackBtn')) $('#ackBtn').onclick = () => { base.ack = true; $('#ackBtn').remove(); tick(); };
     if (all) $('#toPost').onclick = () => { show('Posttest'); window.scrollTo({ top: 0 }); };
     else $('#toWork').onclick = () => $('#workArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
     $('#mbStep').textContent = all ? 'All steps complete' : `Step ${cur + 1}/${EXP.steps.length}: ${s.title}`;
@@ -275,18 +276,24 @@ function buildExperiment(EXP) {
       $('#live').textContent = cluster.leader ? `leader N${cluster.leader} · term ${Math.max(0, ...cluster.nodes.filter(n => n.up).map(n => n.term))} · ${up}/${cluster.n} up` : `no leader · ${up}/${cluster.n} up`;
       if (done.length === EXP.steps.length) return;
       const s = EXP.steps[cur];
-      if (!base.set) { base = { set: true, ...(s.baseline ? s.baseline(cluster) : {}) }; }
+      if (!base.set) { base = { ...base, set: true, ...(s.baseline ? s.baseline(cluster) : {}) }; }
       if (base.locked) return;
-      if (s.check(cluster, base)) {
+      if (s.check(cluster, base) && (!s.confirm || base.ack)) {
         if (!done.includes(cur)) done.push(cur);
         store.set(EXP.id + '.done', done);
-        const c = $('#chk'); if (c) { c.className = 'chk ok'; c.textContent = 'Step complete: ' + s.ok; $('#curStep').classList.add('done'); $('#mbChk').textContent = ' ✓ done'; }
-        $('#progBar').style.width = Math.round(done.length / EXP.steps.length * 100) + '%';
         const next = EXP.steps.findIndex((_, i) => !done.includes(i));
-        // take the next step's baseline now, so anything the learner does during the pause still counts
-        const nb = next >= 0 ? { set: true, ...(EXP.steps[next].baseline ? EXP.steps[next].baseline(cluster) : {}) } : {};
-        setTimeout(() => { if (next >= 0) { cur = next; base = nb; } drawSteps(); }, 1800);
+        const c = $('#chk');
+        if (c) {
+          c.className = 'chk ok'; c.textContent = 'Step complete: ' + s.ok + ' '; $('#curStep').classList.add('done'); $('#mbChk').textContent = ' ✓ done';
+          // never auto-advance: the learner reads the result, then moves on when ready
+          const b = el(`<button class="primary" id="nextStep">${next >= 0 ? 'Next step &rarr;' : 'Finish'}</button>`);
+          b.onclick = () => { if (next >= 0) { cur = next; base = {}; } drawSteps(); };
+          c.append(document.createElement('br'), b);
+        }
+        $('#progBar').style.width = Math.round(done.length / EXP.steps.length * 100) + '%';
         base.locked = true;
+      } else if (s.confirm && s.check(cluster, base)) {
+        const c = $('#chk'); if (c) c.textContent = 'Observe the cluster, then press "I have noted this" to continue.';
       } else if (s.hint) {
         const c = $('#chk'); if (c && !c.classList.contains('ok')) { c.textContent = s.hint(cluster, base) || 'Waiting for you to do this step...'; $('#mbChk').textContent = ' · ' + c.textContent; }
       }
