@@ -1,0 +1,8 @@
+report
+mini-project/data
+mini-project/deliverables
+vlab
+node_modules
+*.docx
+*.pdf
+.claude

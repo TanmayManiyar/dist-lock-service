@@ -1,0 +1,6 @@
+{
+  "buildCommand": "echo no build needed",
+  "installCommand": "echo skip",
+  "outputDirectory": "mini-project/public",
+  "cleanUrls": false
+}
