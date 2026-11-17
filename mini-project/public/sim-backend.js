@@ -299,19 +299,18 @@
   // ------------------------------------------------------------------ choose real vs simulated
   let mode = null, failures = 0;
   const banner = document.createElement('div');
-  banner.style.cssText = 'position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:99999;max-width:92vw;font:13px/1.35 system-ui,sans-serif;' +
-    'background:#1b2538ee;color:#fff;padding:8px 14px;border-radius:12px;box-shadow:0 4px 18px #0005;text-align:center';
-  const mount = () => { if (!banner.isConnected && document.body) document.body.appendChild(banner); };
-  const setBanner = (html) => { banner.innerHTML = html; mount(); };
+  // a plain strip at the very top of the page (not a popup); shown only in simulated mode
+  banner.style.cssText = 'display:none;background:#b45309;color:#fff;font:600 13px/1.2 system-ui,sans-serif;padding:6px 12px;text-align:center';
+  const mount = () => { if (!banner.isConnected && document.body) document.body.insertBefore(banner, document.body.firstChild); };
+  const setBanner = (html) => { banner.innerHTML = html; banner.style.display = 'block'; mount(); };
   document.addEventListener('DOMContentLoaded', mount);
-  setBanner('Checking for the live cluster&hellip;');
 
   function enterSim() {
     mode = 'sim'; init();
     document.title = document.title.replace(/ \(simulated\)$/, '') + ' (simulated)';
-    setBanner('<b>SIMULATED MODE</b>: the AWS cluster is offline, so everything on this page runs in a built-in simulation in your browser. ' +
-      'Every button works, but nothing here is a real server. <button id="simRetry" style="margin-left:8px;padding:3px 10px;border-radius:8px;border:0;background:#9cf;color:#0b1b33;font-weight:600;cursor:pointer">Retry live cluster</button>');
-    const b = document.getElementById('simRetry'); if (b) b.onclick = () => location.reload();
+    setBanner('SIMULATED MODE ON <span style="font-weight:400">&nbsp;&middot; the AWS cluster is offline &middot;</span> ' +
+      '<a id="simRetry" href="#" style="color:#fff;text-decoration:underline;font-weight:400">retry live cluster</a>');
+    const b = document.getElementById('simRetry'); if (b) b.onclick = e => { e.preventDefault(); location.reload(); };
     setInterval(() => { const s = document.getElementById('termStat'); if (s) { s.textContent = '● simulated'; s.className = 'crumb tlive'; } }, 300);
   }
 
@@ -319,7 +318,7 @@
     try {
       const r = await realFetch('/api/cluster', { cache: 'no-store', signal: AbortSignal.timeout(6000) });
       const j = r.ok ? await r.json() : null;
-      if (j && Array.isArray(j.nodes)) { mode = 'live'; setBanner('&#9679; Live cluster connected (real Raft replicas)'); setTimeout(() => { banner.style.display = 'none'; }, 5000); return; }
+      if (j && Array.isArray(j.nodes)) { mode = 'live'; return; }
     } catch (e) { /* fall through */ }
     enterSim();
   })();
