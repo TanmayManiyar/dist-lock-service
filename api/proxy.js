@@ -21,7 +21,11 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const r = await fetch(base + req.url, {
+    // vercel.json rewrites /api/<anything> to /api/proxy?p=<anything> (nested paths need this)
+    const u = new URL(req.url, 'http://x'), p = u.searchParams.get('p');
+    u.searchParams.delete('p');
+    const target = base + (p !== null ? '/api/' + p : u.pathname) + u.search;
+    const r = await fetch(target, {
       method: req.method, headers, body,
       signal: AbortSignal.timeout(+process.env.BACKEND_TIMEOUT_MS || 4000),
     });

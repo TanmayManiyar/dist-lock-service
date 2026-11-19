@@ -9,7 +9,7 @@ Browser --> Vercel (static pages + /api proxy) --> AWS EC2 :80 (gateway + 5 repl
 ```
 
 Why a proxy: Vercel pages are HTTPS but the EC2 gateway is plain HTTP. Browsers block that mix, so the
-browser only ever talks to Vercel, and the function `api/[...path].js` calls EC2 server to server.
+browser only ever talks to Vercel, and the function `api/proxy.js` calls EC2 server to server.
 
 ## 1. AWS side (once per lab account)
 1. AWS Academy -> **Start Lab** -> open the console.
